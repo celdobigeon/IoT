@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ressources IoT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --ink:#14283B; --muted:#586A7B; --line:#C8D2DB;
+  --copper:#B5652D; --link:#1F4E9E;
+  --t-fiche:#1F4E9E; --t-fiche-bg:#E3EBFA;
+  --t-anim:#12845A; --t-anim-bg:#DDF2E8;
+  --t-prog:#6A3FA0; --t-prog-bg:#ECE4F7;
+  --t-img:#8A6212; --t-img-bg:#F7EDD5;
+  --t-doc:#4D6478; --t-doc-bg:#E6ECF1;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1822; --surface:#152230; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+    --copper:#DB8C50; --link:#8CB0FF;
+    --t-fiche:#8CB0FF; --t-fiche-bg:#1C2C4A;
+    --t-anim:#5ED3A0; --t-anim-bg:#163A2B;
+    --t-prog:#C3A2F0; --t-prog-bg:#2C2240;
+    --t-img:#E3BD62; --t-img-bg:#3A2F17;
+    --t-doc:#A9BCCB; --t-doc-bg:#23323F;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1822; --surface:#152230; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+  --copper:#DB8C50; --link:#8CB0FF;
+  --t-fiche:#8CB0FF; --t-fiche-bg:#1C2C4A;
+  --t-anim:#5ED3A0; --t-anim-bg:#163A2B;
+  --t-prog:#C3A2F0; --t-prog-bg:#2C2240;
+  --t-img:#E3BD62; --t-img-bg:#3A2F17;
+  --t-doc:#A9BCCB; --t-doc-bg:#23323F;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1000px;margin:0 auto;padding:32px 20px 56px;display:grid;gap:22px}
+header{display:grid;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.5vw,44px);line-height:1.05;margin:0;text-wrap:balance}
+.intro{margin:0;max-width:72ch;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px}
+nav.toc a{font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 12px}
+nav.toc a:hover{border-color:var(--copper)}
+a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
+section.theme{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:grid;gap:12px;scroll-margin-top:16px}
+.th-head{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.num{font-family:var(--mono);font-size:14px;color:var(--copper);font-weight:500}
+.th-head h2{font-family:var(--display);font-weight:600;font-size:24px;margin:0;text-wrap:balance}
+.desc{margin:0;color:var(--muted);max-width:80ch}
+ul.files{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+ul.files li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line)}
+ul.files li:first-child{border-top:none}
+@media (max-width:600px){ul.files li{grid-template-columns:86px minmax(0,1fr)}}
+ul.files a{color:var(--link);text-decoration:none;font-weight:500;word-break:break-word}
+ul.files a:hover{text-decoration:underline}
+ul.files .what{display:block;font-size:13.5px;color:var(--muted);font-weight:400}
+.tag{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:99px;text-align:center;white-space:nowrap;justify-self:start}
+.fiche{color:var(--t-fiche);background:var(--t-fiche-bg)}
+.anim{color:var(--t-anim);background:var(--t-anim-bg)}
+.prog{color:var(--t-prog);background:var(--t-prog-bg)}
+.img{color:var(--t-img);background:var(--t-img-bg)}
+.doc{color:var(--t-doc);background:var(--t-doc-bg)}
+footer{font-size:12.5px;color:var(--muted)}
+a.dl{display:inline-block;margin-left:10px;font-size:13px;font-weight:500;color:var(--copper);border:1px solid var(--copper);border-radius:99px;padding:1px 10px;text-decoration:none}
+a.dl:hover{background:var(--copper);color:var(--surface)}
+.demarche{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+.demarche h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0}
+.demarche ol{margin:0;padding-left:22px;display:grid;gap:5px;max-width:80ch}
+.demarche p{margin:0;font-size:13.5px;color:var(--muted);max-width:80ch}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Introduction à l'Internet des objets · IdO / IoT</div>
+    <h1>Ressources IoT</h1>
+    <p class="intro">Les travaux pratiques et animations du module d&#x27;introduction à l&#x27;Internet des objets. Cliquez sur un fichier pour l&#x27;ouvrir : les animations s&#x27;ouvrent dans le navigateur, les fiches Word se téléchargent.</p>
+  </header>
+
+  <nav class="toc" aria-label="Thèmes">
+    <a href="#t09">09 · Générateur de tableau de bord</a>
+  </nav>
+
+  <section class="theme" id="t09">
+    <div class="th-head"><span class="num">09</span><h2>Application : générateur de tableau de bord pour l&#x27;ESP32</h2></div>
+    <p class="desc">Composez la page web servie par la carte (jauges, courbes, voyant…), testez-la en simulation et téléchargez le programme Arduino, sans rien programmer.</p>
+    <ul class="files">
+      <li><span class="tag anim">application</span><span><a href="09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a> <a class="dl" href="09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html" download="Generateur_Page_Web_ESP32_etudiant.html">Télécharger pour travailler hors ligne</a><span class="what">Le générateur : un clic sur le nom l&#x27;ouvre dans le navigateur.</span></span></li>
+    </ul>
+    <div class="demarche"><h3>Comment l'utiliser</h3><ol><li><b>Ouvrez le générateur</b> en cliquant sur son nom, ou <b>téléchargez-le</b> pour travailler sans connexion : enregistrez le fichier, puis double-cliquez dessus, il s'ouvre dans votre navigateur.</li><li><b>Regardez l'exemple « TP LED »</b> pour comprendre le principe, puis choisissez <b>« Page vide »</b> pour créer votre propre tableau de bord.</li><li><b>Ma carte</b> : ajoutez ce qui est branché sur l'ESP32 (capteur DHT11, potentiomètre, bouton, LED…). Vérifiez que chaque broche choisie est bien celle de votre câblage, puis saisissez le nom et le mot de passe du Wi-Fi.</li><li><b>Ajoutez des blocs</b> : « Ajouter un bloc », choisissez une forme dans la galerie (jauge, thermomètre, courbe, voyant…), puis la valeur à afficher. « Changer de forme » garde la valeur et change le dessin.</li><li><b>Testez dans l'aperçu</b> : bougez les curseurs de simulation, cliquez sur le voyant ou les boutons de la page.</li><li><b>Téléchargez le programme</b> (.ino) et ouvrez-le dans l'Arduino IDE (acceptez qu'il le range dans un dossier du même nom). Si le téléchargement ne démarre pas, utilisez « Copier le programme » et collez-le dans un nouveau croquis. Choisissez la carte <b>DOIT ESP32 DEVKIT V1</b> et téléversez.</li><li><b>Ouvrez le moniteur série</b> à 115200 bauds : tapez l'adresse IP affichée dans le navigateur d'un téléphone ou d'un ordinateur connecté au même Wi-Fi.</li></ol><p>Votre travail est gardé dans le navigateur que vous utilisez. Pour le reprendre sur un autre ordinateur, cliquez sur « Enregistrer mon tableau de bord (.json) », puis, sur l'autre ordinateur, sur « Ouvrir… ».</p></div>
+  </section>
+
+  <footer>
+    <p>Programmes Arduino : saisissez le nom et le mot de passe du réseau Wi-Fi avant de téléverser, et choisissez la carte DOIT ESP32 DEVKIT V1.</p>
+  </footer>
+</div>
+</body>
+</html>

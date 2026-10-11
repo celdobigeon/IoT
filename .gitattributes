@@ -1,0 +1,9 @@
+# Fins de ligne normalisées en LF dans le dépôt : évite les diffs parasites
+# quand un fichier est édité tantôt sous Windows, tantôt ailleurs.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
+*.docx binary
+*.pptx binary
+*.pdf binary
