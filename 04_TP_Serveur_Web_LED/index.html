@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TP – Piloter une LED avec un serveur web sur ESP32 — Internet des objets (IoT)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fiche.css">
+</head>
+<body>
+<div class="crumb"><div class="in">
+  <a href="../index.html"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="18" width="22" height="22" rx="3"/><path d="M18 13a9 9 0 0 1 12 0"/><path d="M14 8a15 15 0 0 1 20 0"/><path d="M19 40v4M29 40v4M8 25h5M8 33h5M35 25h5M35 33h5"/></svg>Internet des objets (IoT)</a><span class="sep">/</span>
+  <a href="../index.html#tp">Travaux pratiques</a><span class="sep">/</span>
+  <b>TP serveur web LED</b>
+</div></div>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Travaux pratiques — IoT · 04</p>
+  <h1>TP – Piloter une LED avec un serveur web sur ESP32</h1>
+  <p class="lede">Vous câblez la LED, écrivez et testez votre propre programme dans l&#x27;Arduino IDE, découvrez le tableau de bord du TP dans le générateur, puis téléversez le programme du serveur web : un appui sur le voyant de la page allume ou éteint la LED.</p>
+  <div class="meta"><span class="tag">ESP32</span><span class="tag">LED</span><span class="tag">Serveur web</span></div>
+</header>
+<nav class="serie" aria-label="Les TP"><a href="../03_TP_Intro_ESP32/index.html"><b>TP 03</b>TP Intro ESP32</a><span class="ici"><b>TP 04</b>TP serveur web LED</span><a href="../05_TP_Serveur_Web_DHT11/index.html"><b>TP 05</b>TP serveur web DHT11</a><a href="../06_TP_Serveur_Web_capteur%20HCSR04/index.html"><b>TP 06</b>TP capteur HC-SR04</a><a href="../07_TP_Serveur_Web_servomoteur%20SG90/index.html"><b>TP 07</b>TP servomoteur SG90</a></nav>
+<section class="ress"><h2>Ressources</h2><div class="liens"><a href="Animation_LED_Serveur_Web.html"><span class="fl">↗</span><span><b>Ouvrir l'animation</b> · Animation_LED_Serveur_Web.html<span class="d">Requêtes HTTP entre le navigateur et la carte, Wi-Fi coupé, téléphone en 4G</span></span></a><a href="ESP32_Serveur_Web_LED/ESP32_Serveur_Web_LED.ino" download="ESP32_Serveur_Web_LED.ino"><span class="fl">↓</span><span><b>Télécharger ESP32_Serveur_Web_LED.ino</b><span class="d">Le programme Arduino : saisir le Wi-Fi avant de téléverser</span></span></a></div></section>
+
+<section><h2>1. Objectifs</h2>
+<ul><li>Réaliser le câblage d&#x27;une LED et de sa résistance sur une plaque d&#x27;essai, et le relier à la carte ESP32.</li><li>Écrire vos propres programmes dans l&#x27;Arduino IDE : allumer et éteindre la LED, la faire clignoter un nombre de fois choisi, puis enchaîner trois LED comme au jeu Simon.</li><li>Découvrir le tableau de bord du TP avec le générateur de tableau de bord.</li><li>Téléverser le programme du serveur web : la carte devient un serveur web sur le réseau Wi-Fi local.</li><li>Allumer et éteindre la LED depuis le navigateur d&#x27;un téléphone ou d&#x27;un ordinateur.</li><li>Comprendre le trajet des informations grâce à l&#x27;animation fournie.</li></ul>
+<div class="note "><p class="nt">Ce qui vous est fourni</p><ul><li>Le programme du serveur web : dossier ESP32_Serveur_Web_LED (fichier <a href="ESP32_Serveur_Web_LED/ESP32_Serveur_Web_LED.ino" download="ESP32_Serveur_Web_LED.ino">ESP32_Serveur_Web_LED.ino</a>), prêt à téléverser. Vous n&#x27;avez pas à le modifier.</li><li>L&#x27;animation <a href="Animation_LED_Serveur_Web.html">Animation_LED_Serveur_Web.html</a> : ouvrez-la dans un navigateur (double-clic).</li><li>Le générateur de tableau de bord (<a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a>, ou en ligne : <a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a>) : le tableau de bord de ce TP y est déjà créé, c&#x27;est le modèle « TP LED ».</li></ul><p>Votre travail : le câblage, vos programmes (allumer et éteindre la LED, la faire clignoter), la découverte du tableau de bord, le téléversement du serveur web, les tests et les questions.</p></div>
+</section>
+<section><h2>2. Matériel</h2>
+<div class="tbl"><table><tr><th><p><b>Matériel</b></p></th><th><p><b>Remarque</b></p></th></tr><tr><td><p>1 carte DOIT ESP32 DEVKIT V1 + câble micro-USB</p></td><td><p>Le câble doit permettre le transfert de données (pas seulement la charge)</p></td></tr><tr><td><p>1 LED (rouge, par exemple)</p></td><td><p>Patte longue = anode (+), patte courte = cathode (–)</p></td></tr><tr><td><p>1 résistance de 220 Ω</p></td><td><p>Anneaux de couleur : rouge – rouge – marron (puis or)</p></td></tr><tr><td><p>1 plaque d&#x27;essai (breadboard)</p></td><td></td></tr><tr><td><p>2 fils mâle-femelle (1 jaune, 1 noir) + 1 fil mâle-mâle noir</p></td><td><p>Côté femelle : sur les broches de la carte ; côté mâle : dans la plaque d&#x27;essai</p></td></tr><tr><td><p>1 ordinateur avec l&#x27;Arduino IDE</p></td><td><p>Les cartes ESP32 sont déjà installées</p></td></tr><tr><td><p>1 smartphone (ou l&#x27;ordinateur) avec un navigateur web</p></td><td><p>Connecté au même réseau Wi-Fi que la carte</p></td></tr><tr><td><p>Pour la partie 11 : 2 LED de couleurs différentes + 2 résistances de 220 Ω + 2 fils mâle-femelle</p></td><td><p>Une LED jaune et une LED verte, par exemple : avec la LED rouge, on obtient trois couleurs comme au jeu Simon</p></td></tr></table></div>
+<p><b>La breadboard</b></p>
+<p>L&#x27;objectif d&#x27;une &quot;breadboard&quot; est de pouvoir faire des connexions simplement entre des composants (résistances, LEDs, Capacités, etc ...) sans souder. Elle est idéale pour tester un circuit ou réaliser un montage temporaire. </p>
+<p>Techniquement, une breadboard est une plaque pleine de trous reliés entre eux selon un schéma bien spécifique et commun à toutes les plaques que voici : </p>
+<figure><img src="img/figure_01.png" alt="https://lafabriquediy.s3.amazonaws.com/media/images/guy-geek/Breadboard%20ou%20%22plaque%20%C3%A0%20bidouille%22/breadboard_90.png" loading="lazy" style="max-width:227px"><figcaption>Fig  – Câblage d’une breadboard</figcaption></figure>
+<p><b>La LED</b></p>
+<p>Une diode électroluminescente, aussi appelée LED pour &quot;Light-Emitting Diode&quot;, est un composant électronique qui a la particularité d&#x27;émettre une lumière lorsqu&#x27;il est parcouru par un courant électrique.</p>
+<p>Ce composant de la famille des semi-conducteurs est dit &quot;passif&quot;. Son sens est déterminé grâce aux 2 parties qui composent ce composant : l&#x27;Anode et la Cathode. Pour s&#x27;illuminer, le courant doit parcourir la LED de l&#x27;anode vers la cathode.</p>
+<p>Il y a plusieurs façons pour définir et reconnaitre le sens d&#x27;une LED :</p>
+<ul><li>Sur le composant, l&#x27;anode (pôle positif) est le côté où la patte du composant est la plus longue. La cathode (pôle négatif) est donc la patte la plus courte.</li><li>Vu du dessus, la LED n&#x27;est pas totalement circulaire, il y a toujours un côté plat. Ce côté plat représente la cathode. Cette astuce est indispensable pour reconnaitre la cathode lorsque les pattes sont coupées.</li><li>Sur un schéma électrique, la cathode est représentée par le côté où il y a le bord plat à droite du triangle.</li></ul>
+<figure><img src="img/figure_02.png" alt="" loading="lazy" style="max-width:75px"><figcaption>Fig  – Schéma d’une LED</figcaption></figure>
+</section>
+<section><h2>3. Avant de commencer : l&#x27;animation</h2>
+<p>Ouvrez <a href="Animation_LED_Serveur_Web.html">Animation_LED_Serveur_Web.html</a> et jouez les scénarios dans l&#x27;ordre. Cochez « Pas à pas » pour avancer à votre rythme.</p>
+<ol><li>« 1. Démarrer la carte » : la carte se connecte au Wi-Fi et reçoit une adresse IP.</li><li>« 2. Ouvrir la page » : le navigateur demande la page à la carte.</li><li>Cliquez sur le voyant de la page, sur le téléphone, pour allumer la LED : suivez la requête, le code exécuté, le courant dans le fil, puis la réponse.</li><li>« 3. Couper le Wi-Fi » et « Téléphone en 4G » : observez ce qui se passe quand la carte n&#x27;est plus joignable.</li></ol>
+</section>
+<section><h2>4. Le câblage</h2>
+<div class="note amber"><p class="nt">Rappels</p><ul><li>La LED a un sens : la patte longue (+, anode) va du côté de la résistance et de la broche D26 ; la patte courte (–, cathode) va vers la masse (GND).</li><li>Sur la plaque d&#x27;essai, les 5 trous d&#x27;une même colonne (a à e, ou f à j) sont reliés entre eux.</li><li>Les lignes bleues (–) et rouges (+) des bords sont reliées sur toute leur longueur.</li><li>Réalisez tout le câblage carte débranchée.</li></ul></div>
+<h3>Schéma de câblage</h3>
+<figure><img src="img/figure_03.png" alt="" loading="lazy" style="max-width:642px"><figcaption><em>Figure 3 – Câblage de la LED et de la résistance (les numéros correspondent aux étapes ci-dessous)</em></figcaption></figure>
+<h3>Schéma électrique</h3>
+<figure><img src="img/figure_04.png" alt="" loading="lazy" style="max-width:604px"><figcaption><em>Figure 4 – Schéma électrique : D26 → résistance 220 Ω → LED → GND</em></figcaption></figure>
+<h3>Étapes</h3>
+<ol><li><b>Fil jaune</b> : du côté femelle sur la broche <b><code>D26</code></b> de la carte, du côté mâle dans le trou <b><code>e20</code></b> de la plaque d&#x27;essai.</li><li><b>Résistance 220 Ω</b> : dans les trous <b><code>c16</code></b> et <b><code>c20</code></b> (elle n&#x27;a pas de sens).</li><li><b>LED</b> : patte longue (+) dans le trou <b><code>b16</code></b>, patte courte (–) dans le trou <b><code>b15</code></b>.</li><li><b>Fil noir mâle-mâle</b> : du trou <b><code>e15</code></b> à la ligne bleue (–) du bas.</li><li><b>Fil noir mâle-femelle</b> : de la broche <b><code>GND</code></b> de la carte (côté gauche, sous D13) à la ligne bleue (–) du bas.</li></ol>
+<div class="tbl"><table><tr><th><p><b>Élément</b></p></th><th><p><b>De</b></p></th><th><p><b>Vers</b></p></th></tr><tr><td><p>Fil jaune</p></td><td><p>Broche D26 de la carte</p></td><td><p>Trou e20</p></td></tr><tr><td><p>Résistance 220 Ω</p></td><td><p>Trou c16</p></td><td><p>Trou c20</p></td></tr><tr><td><p>LED</p></td><td><p>Patte longue (+) : trou b16</p></td><td><p>Patte courte (–) : trou b15</p></td></tr><tr><td><p>Fil noir</p></td><td><p>Trou e15</p></td><td><p>Ligne bleue (–) du bas</p></td></tr><tr><td><p>Fil noir</p></td><td><p>Broche GND de la carte</p></td><td><p>Ligne bleue (–) du bas</p></td></tr></table></div>
+<p><b>Faites vérifier votre câblage par l&#x27;enseignant avant de brancher la carte.</b></p>
+<ul class="check"><li>Câblage vérifié</li></ul>
+</section>
+<section><h2>5. Allumer et éteindre la LED avec votre programme</h2>
+<p>Avant d&#x27;utiliser le serveur web, vérifiez que vous savez commander la LED avec un programme que vous écrivez vous-même dans l&#x27;Arduino IDE.</p>
+<ol><li>Branchez la carte à l&#x27;ordinateur avec le câble micro-USB.</li><li>Dans l&#x27;Arduino IDE, créez un programme : <code>Fichier &gt; Nouveau croquis</code>. Enregistrez-le sous le nom <code>Test_LED</code>.</li><li>Choisissez la carte (<code>Outils &gt; Carte &gt; esp32 &gt; DOIT ESP32 DEVKIT V1</code>) et le port (<code>Outils &gt; Port</code>).</li><li>Écrivez un programme qui allume la LED, branchée sur D26 (GPIO <b>26</b>). Aide : dans <code>setup()</code>, <code>pinMode(broche, OUTPUT)</code> déclare la broche en sortie, puis <code>digitalWrite(broche, HIGH)</code> met la broche à 3,3 V : la LED s&#x27;allume.</li><li>Cliquez sur <code>Téléverser</code> (flèche →) et observez la LED.</li></ol>
+<ul class="check"><li>La LED s&#x27;allume</li></ul>
+<ol><li>Modifiez votre programme pour éteindre la LED : <code>digitalWrite(broche, LOW)</code> met la broche à 0 V. Téléversez et observez.</li></ol>
+<ul class="check"><li>La LED s&#x27;éteint</li></ul>
+<p><b>Allumer et éteindre la LED depuis le moniteur série</b></p>
+<p>Modifiez votre programme : la LED s&#x27;allume quand vous envoyez <b>1</b> dans le moniteur série, et s&#x27;éteint quand vous envoyez <b>0</b>. Aide : <code>Serial.begin(115200)</code> dans <code>setup()</code> ouvre la liaison avec le moniteur série ; dans <code>loop()</code>, <code>Serial.available() &gt; 0</code> indique qu&#x27;un caractère est arrivé, <code>Serial.read()</code> le lit, et <code>if (c == &#x27;1&#x27;)</code> teste sa valeur.</p>
+<p>Téléversez, ouvrez le <code>Moniteur série</code> (115200 bauds), tapez 1 puis Entrée, puis 0 puis Entrée. C&#x27;est déjà le principe du serveur web : un message arrive, la carte commande la broche. Avec le serveur web, le message viendra du navigateur, par le Wi-Fi.</p>
+<ul class="check"><li>La LED répond aux commandes 1 et 0</li></ul>
+</section>
+<section><h2>6. Le tableau de bord</h2>
+<p>Le tableau de bord est la page web que la carte affichera dans le navigateur. Il se crée avec le générateur de tableau de bord, sans programmer. Pour ce TP, il est déjà créé : c&#x27;est le modèle « TP LED ».</p>
+<ol><li>Ouvrez le générateur : double-cliquez sur <code><a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a></code>, ou ouvrez <code><a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a></code> dans le navigateur.</li><li>Cliquez sur le modèle <b>« TP LED »</b>.</li><li>Dans <b>Ma carte</b>, vérifiez le composant : une sortie « LED » sur la broche <b>D26</b>, comme votre câblage.</li><li>Dans <b>Blocs du tableau de bord</b>, repérez les trois blocs : un titre, une consigne et un voyant. Ouvrez le bloc « Voyant » : la case « Cliquer sur le voyant allume / éteint la sortie » est cochée.</li><li>Dans l&#x27;aperçu, cliquez sur le voyant : la LED simulée de la carte s&#x27;allume, puis s&#x27;éteint au clic suivant.</li><li>Ouvrez l&#x27;onglet <b>Programme Arduino</b> : c&#x27;est le programme qui fabrique ce tableau de bord.</li></ol>
+<p>Pour ce TP, vous n&#x27;avez pas à télécharger ce programme : le programme du serveur web est fourni (<code><a href="ESP32_Serveur_Web_LED/ESP32_Serveur_Web_LED.ino" download="ESP32_Serveur_Web_LED.ino">ESP32_Serveur_Web_LED.ino</a></code>) et affiche le même voyant cliquable. Dans les TP suivants, vous créerez vous-même votre tableau de bord et vous téléchargerez son programme.</p>
+<ul class="check"><li>Dans l&#x27;aperçu, le voyant allume et éteint la LED simulée</li></ul>
+</section>
+<section><h2>7. Téléverser le programme du serveur web</h2>
+<ol><li>Gardez la carte branchée à l&#x27;ordinateur.</li><li>Dans l&#x27;Arduino IDE, ouvrez <code>Fichier &gt; Ouvrir</code> puis le fichier <code><a href="ESP32_Serveur_Web_LED/ESP32_Serveur_Web_LED.ino" download="ESP32_Serveur_Web_LED.ino">ESP32_Serveur_Web_LED.ino</a></code>. Il remplace votre programme de test sur la carte.</li><li>Choisissez la carte : <code>Outils &gt; Carte &gt; esp32 &gt; DOIT ESP32 DEVKIT V1</code>.</li><li>Choisissez le port de la carte : <code>Outils &gt; Port</code> (COM3, COM4… sous Windows).</li><li>Cliquez sur <code>Téléverser</code> (flèche →). Si le téléversement bloque sur « Connecting… », <b>maintenez le bouton BOOT</b> enfoncé jusqu&#x27;au début du transfert.</li><li>Ouvrez le <code>Moniteur série</code> (vitesse <code>115200 bauds</code>), puis appuyez sur le bouton <b>EN</b> de la carte. L&#x27;adresse IP s&#x27;affiche après la connexion.</li></ol>
+<p>Notez sur votre feuille l&#x27;adresse IP de votre carte (par exemple 192.168.1.42) : vous en aurez besoin pour ouvrir la page.</p>
+<ul class="check"><li>L&#x27;adresse IP s&#x27;affiche dans le moniteur série</li></ul>
+<figure><img src="img/figure_05.png" alt="" loading="lazy" style="max-width:156px"></figure>
+</section>
+<section><h2>8. Tester</h2>
+<ol><li>Connectez le téléphone (ou l&#x27;ordinateur) au même réseau Wi-Fi que la carte.</li><li>Dans le navigateur, tapez <code>http://</code> suivi de l&#x27;adresse IP de la carte (par exemple <code>http://192.168.1.42</code>).</li><li>Appuyez sur le voyant de la page pour allumer la LED, puis appuyez de nouveau pour l&#x27;éteindre. Regardez la LED, la page (texte et voyant) et la barre d&#x27;adresse du navigateur.</li></ol>
+<ul class="check"><li>La LED s&#x27;allume et s&#x27;éteint</li><li>La page affiche l&#x27;état de la LED</li><li>Le voyant de la page est rouge quand la LED est allumée, gris quand elle est éteinte</li></ul>
+</section>
+<section><h2>9. Faire clignoter la LED</h2>
+<p>Revenez à l&#x27;Arduino IDE et créez un nouveau croquis, <code>Clignoter_LED</code>. En le téléversant, vous remplacez le programme du serveur web sur la carte.</p>
+<ol><li>Écrivez un programme qui fait clignoter la LED sans s&#x27;arrêter : allumée 1 s, éteinte 1 s. Aide : les instructions qui se répètent se placent dans <code>loop()</code> ; <code>delay(1000)</code> attend 1000 millisecondes.</li><li>Téléversez et observez la LED.</li></ol>
+<ul class="check"><li>La LED clignote : allumée 1 s, éteinte 1 s</li></ul>
+<p><b>Choisir le nombre de clignotements</b></p>
+<ol><li>Modifiez le programme : la LED clignote <b>5 fois</b>, puis reste éteinte. Aide : <code>for (int i = 0; i &lt; 5; i++) { … }</code> répète 5 fois les instructions placées entre les accolades ; placée dans <code>setup()</code>, la boucle ne s&#x27;exécute qu&#x27;une seule fois.</li><li>Changez le nombre de clignotements (par exemple 10) et vérifiez.</li></ol>
+<ul class="check"><li>La LED clignote exactement le nombre de fois prévu, puis s&#x27;arrête</li></ul>
+<p><b>Pour aller plus loin : choisir le nombre depuis le moniteur série</b></p>
+<p>La carte attend un nombre tapé dans le moniteur série, puis fait clignoter la LED ce nombre de fois. Aide : <code>Serial.parseInt()</code> lit un nombre entier arrivé par le moniteur série.</p>
+<ul class="check"><li>La LED clignote le nombre de fois tapé dans le moniteur série</li></ul>
+</section>
+<section class="questions"><h2>10. Questions de compréhension</h2>
+<ol><li>À quoi sert la résistance de 220 Ω ? Que risquerait-on sans elle ?</li><li>Vous appuyez sur le voyant pour allumer la LED : la page affiche « LED : allumée », mais la LED reste éteinte. Donnez deux erreurs de câblage qui peuvent expliquer ce résultat.</li><li>Dans ce TP, qui joue le rôle de client et qui joue le rôle de serveur ?</li><li>Quand vous appuyez sur le voyant éteint, quelle adresse le navigateur demande-t-il ? Quelle fonction du programme est alors exécutée, et que fait-elle ?</li><li>Dans l&#x27;animation, cochez « Téléphone en 4G » puis rechargez la page. Pourquoi la page n&#x27;est-elle plus accessible ?</li><li>Comparez votre programme de la partie 5 et la fonction handleOn() du programme du serveur web (annexe). Quelle instruction commande la LED dans les deux programmes ? Qu&#x27;est-ce qui déclenche cette instruction dans chaque cas ?</li></ol>
+</section>
+<section><h2>11. Trois LED en chaîne (façon Simon)</h2>
+<p>Comme dans le jeu Simon, trois LED s&#x27;allument l&#x27;une après l&#x27;autre. Chaque LED donne son état à la suivante : la LED 1 s&#x27;allume, son état allume la LED 2, et l&#x27;état de la LED 2 allume la LED 3.</p>
+<p><b>Le câblage</b></p>
+<ol><li>Débranchez la carte. Gardez la LED 1 (rouge) sur <b>D26</b>.</li><li>Ajoutez la LED 2 (jaune) sur la broche <b>D27</b> et la LED 3 (verte) sur la broche <b>D14</b>, chacune avec sa résistance de 220 Ω : reproduisez le montage de la LED 1, quelques colonnes plus loin sur la plaque d&#x27;essai.</li><li>Reliez la patte courte (–) de chaque LED à la ligne bleue (–) : les trois LED partagent la même masse (GND).</li></ol>
+<ul class="check"><li>Câblage des trois LED vérifié par l&#x27;enseignant</li></ul>
+<p><b>Le programme</b></p>
+<ol><li>Créez un nouveau croquis, <code>Simon_LED</code>. Déclarez les trois broches en sortie.</li><li>Allumez la LED 1, puis attendez 500 ms.</li><li>Lisez l&#x27;état de la LED 1 et affichez-le dans le moniteur série. S&#x27;il vaut <code>HIGH</code>, allumez la LED 2. Attendez 500 ms. Aide : <code>digitalRead(broche)</code> renvoie <code>HIGH</code> quand la broche est à 3,3 V ; <code>if (digitalRead(26) == HIGH) { … }</code> teste cet état.</li><li>Faites de même : l&#x27;état de la LED 2 allume la LED 3.</li><li>Éteignez les trois LED, attendez 1 s : comme tout est dans <code>loop()</code>, la séquence recommence.</li><li>Téléversez, ouvrez le moniteur série (115200 bauds) et observez.</li></ol>
+<ul class="check"><li>Les LED s&#x27;allument l&#x27;une après l&#x27;autre : 1, puis 2, puis 3</li><li>Le moniteur série affiche l&#x27;état de chaque LED</li></ul>
+<p><b>Pour aller plus loin : le jeu Simon</b></p>
+<p>La carte allume une séquence de LED au hasard ; le joueur la répète en tapant 1, 2 ou 3 dans le moniteur série. À chaque bonne réponse, la séquence s&#x27;allonge d&#x27;une LED ; à la première erreur, la carte affiche le score et une nouvelle partie commence. Aide : <code>random(0, 3)</code> tire un nombre au hasard entre 0 et 2 ; un tableau <code>int sequence[20];</code> garde la séquence ; <code>Serial.parseInt()</code> lit le nombre tapé.</p>
+<ul class="check"><li>Le jeu Simon fonctionne : la séquence s&#x27;allonge à chaque bonne réponse</li></ul>
+</section>
+<section><h2>12. En cas de problème</h2>
+<div class="tbl"><table><tr><th><p><b>Problème</b></p></th><th><p><b>Solution</b></p></th></tr><tr><td><p>La carte n&#x27;apparaît pas dans Outils &gt; Port</p></td><td><p>Vérifier le câble micro-USB (données), installer le pilote USB (CP210x), changer de port USB.</p></td></tr><tr><td><p>Le téléversement bloque sur « Connecting… »</p></td><td><p>Maintenir le bouton BOOT enfoncé au début du téléversement.</p></td></tr><tr><td><p>Des points s&#x27;affichent sans fin dans le moniteur série</p></td><td><p>La carte ne trouve pas le réseau Wi-Fi : prévenir l&#x27;enseignant.</p></td></tr><tr><td><p>Rien ne s&#x27;affiche dans le moniteur série</p></td><td><p>Régler la vitesse sur 115200 bauds, puis appuyer sur EN.</p></td></tr><tr><td><p>La page ne s&#x27;ouvre pas</p></td><td><p>Vérifier que le téléphone est sur le même Wi-Fi et que l&#x27;adresse commence par http:// (et non https://).</p></td></tr><tr><td><p>La page répond mais la LED ne s&#x27;allume pas</p></td><td><p>Vérifier le câblage : sens de la LED, broche D26, colonnes de la plaque d&#x27;essai, fil GND.</p></td></tr><tr><td><p>La LED ne s&#x27;allume pas ou ne clignote pas avec mon programme</p></td><td><p>Vérifier la broche (26), pinMode(26, OUTPUT) dans setup(), puis le câblage : sens de la LED, colonnes de la plaque d&#x27;essai, fil GND.</p></td></tr><tr><td><p>Rien ne se passe quand je tape 1 dans le moniteur série</p></td><td><p>Régler le moniteur série sur 115200 bauds, comme dans Serial.begin(115200), puis taper 1 et Entrée.</p></td></tr><tr><td><p>La LED clignote sans s&#x27;arrêter au lieu de 5 fois</p></td><td><p>La boucle for est dans loop(), qui se répète sans fin : la placer dans setup().</p></td></tr><tr><td><p>Une des trois LED ne s&#x27;allume jamais</p></td><td><p>Vérifier sa broche (D27 ou D14) dans le câblage et dans pinMode(), le sens de la LED et sa liaison à la ligne bleue (–).</p></td></tr></table></div>
+</section>
+<section><h2>Annexe – Programme du serveur web (fourni)</h2>
+<p class="pel"><em>Pour information : ce programme est déjà prêt, vous n&#x27;avez pas à le modifier. Vous retrouvez les mêmes lignes dans l&#x27;animation.</em></p>
+<pre><code>// TP IoT - Piloter une LED avec un serveur web sur ESP32
+// Carte : DOIT ESP32 DEVKIT V1 - LED + résistance 220 ohms sur la broche D26 (GPIO 26)
+ 
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+ 
+const char* ssid = &quot;NOM_DU_RESEAU&quot;;      // nom du réseau Wi-Fi (2,4 GHz)
+const char* password = &quot;MOT_DE_PASSE&quot;;   // mot de passe du réseau Wi-Fi
+ 
+const int LED_PIN = 26;
+WebServer server(80);                    // serveur web sur le port 80
+bool etat_led = false;
+ 
+// Construit la page HTML envoyée au navigateur
+String page() {
+  String html = &quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&quot;;
+  html += &quot;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width&#x27;&gt;&lt;/head&gt;&lt;body&gt;&quot;;
+  html += &quot;&lt;h1&gt;LED : &quot;;
+  html += etat_led ? &quot;allumée&quot; : &quot;éteinte&quot;;
+  html += &quot;&lt;/h1&gt;&quot;;
+  // Voyant cliquable : il ouvre /off si la LED est allumée, /on si elle est éteinte
+  html += etat_led ? &quot;&lt;a href=&#x27;/off&#x27;&gt;&quot; : &quot;&lt;a href=&#x27;/on&#x27;&gt;&quot;;
+  html += &quot;&lt;div style=&#x27;width:80px;height:80px;border-radius:50%;border:3px solid #333;background:&quot;;
+  html += etat_led ? &quot;#ff2020;box-shadow:0 0 30px #ff2020&quot; : &quot;#555&quot;;
+  html += &quot;&#x27;&gt;&lt;/div&gt;&lt;/a&gt;&quot;;
+  html += &quot;&lt;p&gt;Appuyez sur le voyant pour &quot;;
+  html += etat_led ? &quot;éteindre&quot; : &quot;allumer&quot;;
+  html += &quot; la LED.&lt;/p&gt;&quot;;
+  html += &quot;&lt;/body&gt;&lt;/html&gt;&quot;;
+  return html;
+}
+ 
+// Appelée quand le navigateur demande l&#x27;adresse /
+void handleRoot() {
+  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+}
+ 
+// Appelée quand le navigateur demande l&#x27;adresse /on
+void handleOn() {
+  digitalWrite(LED_PIN, HIGH);
+  etat_led = digitalRead(LED_PIN);
+  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+}
+ 
+// Appelée quand le navigateur demande l&#x27;adresse /off
+void handleOff() {
+  digitalWrite(LED_PIN, LOW);
+  etat_led = digitalRead(LED_PIN);
+  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+}
+ 
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+ 
+  WiFi.begin(ssid, password);            // connexion au Wi-Fi
+  Serial.print(&quot;Connexion au Wi-Fi&quot;);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(&quot;.&quot;);
+  }
+  Serial.println();
+  Serial.print(&quot;Adresse IP : &quot;);
+  Serial.println(WiFi.localIP());        // adresse à taper dans le navigateur
+ 
+  server.on(&quot;/&quot;, handleRoot);            // adresse -&gt; fonction
+  server.on(&quot;/on&quot;, handleOn);
+  server.on(&quot;/off&quot;, handleOff);
+  server.begin();                        // démarrage du serveur web
+}
+ 
+void loop() {
+  server.handleClient();                 // traite les requêtes des navigateurs
+}</code></pre>
+<p class="pel"><em>Couleurs de l&#x27;Arduino IDE : orange = fonctions d&#x27;Arduino et des bibliothèques, bleu-vert = types et constantes, vert olive = structure du programme, gris = commentaires. Les noms en noir sont choisis par le programmeur.</em></p>
+</section>
+<footer>Céline Dobigeon — IUT, Université de Bordeaux · <a href="../index.html">Retour à l'accueil</a></footer>
+</div>
+</body>
+</html>

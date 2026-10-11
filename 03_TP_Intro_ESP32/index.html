@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TP – Introduction à l’ESP32 — Internet des objets (IoT)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fiche.css">
+</head>
+<body>
+<div class="crumb"><div class="in">
+  <a href="../index.html"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="18" width="22" height="22" rx="3"/><path d="M18 13a9 9 0 0 1 12 0"/><path d="M14 8a15 15 0 0 1 20 0"/><path d="M19 40v4M29 40v4M8 25h5M8 33h5M35 25h5M35 33h5"/></svg>Internet des objets (IoT)</a><span class="sep">/</span>
+  <a href="../index.html#tp">Travaux pratiques</a><span class="sep">/</span>
+  <b>TP Intro ESP32</b>
+</div></div>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Travaux pratiques — IoT · 03</p>
+  <h1>TP – Introduction à l’ESP32</h1>
+  <p class="lede">Découverte de la carte DOIT ESP32 DEVKIT V1, installation dans l&#x27;Arduino IDE, premier téléversement et bases du langage. À faire avant les autres TP.</p>
+  <div class="meta"><span class="tag">ESP32</span><span class="tag">Arduino IDE</span><span class="tag">Bases du langage</span></div>
+</header>
+<nav class="serie" aria-label="Les TP"><span class="ici"><b>TP 03</b>TP Intro ESP32</span><a href="../04_TP_Serveur_Web_LED/index.html"><b>TP 04</b>TP serveur web LED</a><a href="../05_TP_Serveur_Web_DHT11/index.html"><b>TP 05</b>TP serveur web DHT11</a><a href="../06_TP_Serveur_Web_capteur%20HCSR04/index.html"><b>TP 06</b>TP capteur HC-SR04</a><a href="../07_TP_Serveur_Web_servomoteur%20SG90/index.html"><b>TP 07</b>TP servomoteur SG90</a></nav>
+
+<div class="note "><p class="nt">Objectifs</p><ul><li>Connaître les caractéristiques principales de l’ESP32 et les éléments de la carte DOIT ESP32 DEVKIT V1.</li><li>Installer le support des cartes ESP32 dans l’Arduino IDE et téléverser un premier programme.</li><li>Échanger des messages avec la carte grâce au moniteur série.</li><li>Utiliser les bases du langage : variables, opérations, boucle <code>for</code> et conditions.</li></ul></div>
+<div class="note "><p class="nt">Matériel</p><ul><li>une carte <b>DOIT ESP32 DEVKIT V1</b> ;</li><li>un câble <b>micro-USB de données</b> (un câble de charge seule ne transmet pas les programmes) ;</li><li>un ordinateur avec l’<b>Arduino IDE</b> installé.</li></ul></div>
+<section><h2>1. Présentation de l’ESP32</h2>
+<p>L’<b>ESP32</b> est un microcontrôleur fabriqué par la société chinoise <b>Espressif Systems</b>. Un microcontrôleur est un petit ordinateur complet sur une seule puce : un processeur, de la mémoire et des entrées/sorties pour lire des capteurs et commander des actionneurs (LED, moteurs, relais…).</p>
+<p>Sa particularité : il intègre le <b>Wi-Fi</b> et le <b>Bluetooth</b>. Il peut donc envoyer des mesures sur Internet ou être commandé à distance sans ajouter de module. C’est pour cela qu’il est très utilisé dans les objets connectés (IoT) : prises et ampoules connectées, stations météo, capteurs industriels…</p>
+<h3>1.1 Caractéristiques principales</h3>
+<div class="tbl"><table><tr><th><p><b>Caractéristique</b></p></th><th><p><b>ESP32 (module ESP-WROOM-32)</b></p></th><th><p><b>Pour comparer : Arduino Uno</b></p></th></tr><tr><td><p>Processeur</p></td><td><p>2 cœurs, 32 bits, jusqu’à 240 MHz</p></td><td><p>1 cœur, 8 bits, 16 MHz</p></td></tr><tr><td><p>Mémoire vive (RAM)</p></td><td><p>520 Ko</p></td><td><p>2 Ko</p></td></tr><tr><td><p>Mémoire programme (flash)</p></td><td><p>4 Mo</p></td><td><p>32 Ko</p></td></tr><tr><td><p>Communication sans fil</p></td><td><p>Wi-Fi 2,4 GHz + Bluetooth (classique et BLE)</p></td><td><p>aucune</p></td></tr><tr><td><p>Tension des entrées/sorties</p></td><td><p><b>3,3 V</b></p></td><td><p>5 V</p></td></tr><tr><td><p>Entrées analogiques</p></td><td><p>convertisseur 12 bits (valeurs de 0 à 4095)</p></td><td><p>convertisseur 10 bits (0 à 1023)</p></td></tr><tr><td><p>Bus de communication</p></td><td><p>UART, I2C, SPI, PWM sur presque toutes les broches</p></td><td><p>UART, I2C, SPI, 6 broches PWM</p></td></tr></table></div>
+<p class="pel"><em><b>Tableau 1 – </b></em><em>L’ESP32 comparé à l’Arduino Uno</em></p>
+<div class="note "><p class="nt">Attention : l’ESP32 fonctionne en 3,3 V</p><p>Ses broches d’entrée/sortie acceptent au maximum <b>3,3 V</b>. Brancher un capteur qui renvoie 5 V directement sur une broche peut détruire la carte. En cas de doute, vérifiez la tension de sortie du capteur avant de le câbler.</p></div>
+<h3>1.2 La carte DOIT ESP32 DEVKIT V1</h3>
+<p>La puce ESP32 est montée sur une carte de développement qui ajoute tout ce qu’il faut pour l’utiliser facilement : un port USB, un régulateur de tension, deux boutons, deux LED et des broches à planter dans une plaque d’essai.</p>
+<figure><img src="img/figure_01.png" alt="" loading="lazy" style="max-width:529px"><figcaption><em><b>Figure 1 – </b></em><em>Les éléments de la carte DOIT ESP32 DEVKIT V1</em></figcaption></figure>
+<div class="tbl"><table><tr><th><p><b>Élément</b></p></th><th><p><b>Rôle</b></p></th></tr><tr><td><p>Port micro-USB</p></td><td><p>Alimente la carte et sert à téléverser les programmes et à dialoguer avec l’ordinateur.</p></td></tr><tr><td><p>Bouton <b>EN</b></p></td><td><p>Redémarre la carte (reset) : le programme repart du début.</p></td></tr><tr><td><p>Bouton <b>BOOT</b></p></td><td><p>Maintenu pendant le téléversement, il force la carte à accepter un nouveau programme.</p></td></tr><tr><td><p>LED rouge</p></td><td><p>Témoin d’alimentation : elle s’allume dès que la carte est branchée.</p></td></tr><tr><td><p>LED bleue</p></td><td><p>Reliée à la broche GPIO 2 (<code>LED_BUILTIN</code>) : on peut l’allumer depuis un programme.</p></td></tr><tr><td><p>Broches <b>D…</b></p></td><td><p>Entrées/sorties numériques (GPIO). Le numéro correspond au numéro de GPIO : D26 = GPIO 26.</p></td></tr><tr><td><p><b>3V3</b>, <b>VIN</b>, <b>GND</b></p></td><td><p>3V3 : sortie 3,3 V pour alimenter un capteur. VIN : entrée 5 V. GND : masse (0 V).</p></td></tr></table></div>
+<p>Les broches <b>D34</b>, <b>D35</b>, <b>VP</b> (GPIO 36) et <b>VN</b> (GPIO 39) fonctionnent uniquement en <b>entrée</b>. Les broches TX0 et RX0 servent à la liaison série avec l’ordinateur : il vaut mieux ne rien y brancher.</p>
+</section>
+<section><h2>2. Programmer l’ESP32 depuis l’Arduino IDE</h2>
+<p>L’<b>Arduino IDE</b> est le logiciel qui permet d’écrire un programme, de le compiler et de l’envoyer sur la carte. Un programme Arduino s’appelle un <b>croquis</b> (« sketch » en anglais).</p>
+<figure><img src="img/figure_02.png" alt="" loading="lazy" style="max-width:340px"><figcaption><em><b>Figure 2 – </b></em><em>Aperçu de l’Arduino IDE au premier démarrage</em></figcaption></figure>
+<p>À l’installation, l’Arduino IDE ne sait programmer que les cartes Arduino. Il faut d’abord lui ajouter les outils propres à l’ESP32.</p>
+<h3>2.1 Ajouter le support des cartes ESP32</h3>
+<p><b>1.</b> Ouvrir <b>Fichier → Préférences</b>. Dans le champ <b>URL de gestionnaire de cartes supplémentaires</b>, coller l’adresse suivante, puis valider avec <b>OK</b> :</p>
+<pre><code>https://espressif.github.io/arduino-esp32/package_esp32_index.json</code></pre>
+<p><b>2.</b> Ouvrir le gestionnaire de cartes : <b>Outils → Type de carte → Gestionnaire de carte</b>.</p>
+<figure><img src="img/figure_03.png" alt="" loading="lazy" style="max-width:359px"><figcaption><em><b>Figure 3 – </b></em><em>Accéder au gestionnaire de carte</em></figcaption></figure>
+<p><b>3.</b> Taper <b>esp32</b> dans la barre de recherche. Si le paquet <b>esp32 by Espressif Systems</b> n’affiche pas la mention <b>INSTALLED</b>, cliquer sur <b>Installer</b> et patienter (le téléchargement peut prendre quelques minutes).</p>
+<figure><img src="img/figure_04.png" alt="" loading="lazy" style="max-width:434px"><figcaption><em><b>Figure 4 – </b></em><em>Le paquet esp32 d’Espressif Systems dans le gestionnaire de carte</em></figcaption></figure>
+<p>Les cartes ESP32 apparaissent maintenant dans <b>Outils → Type de carte → ESP32 Arduino</b>. Sélectionner <b>DOIT ESP32 DEVKIT V1</b>.</p>
+<figure><img src="img/figure_05.png" alt="" loading="lazy" style="max-width:453px"><figcaption><em><b>Figure 5 – </b></em><em>Choisir la carte DOIT ESP32 DEVKIT V1</em></figcaption></figure>
+<div class="note "><p class="nt">Arduino IDE 2</p><p>Les captures ont été faites avec l’Arduino IDE 1.8. Dans la version 2, les menus portent les mêmes noms ; le gestionnaire de carte s’ouvre aussi avec l’icône de carte dans la barre de gauche.</p></div>
+<h3>2.2 Brancher la carte et choisir le port</h3>
+<p>Avant d’écrire un programme, il faut vérifier que l’ordinateur dialogue avec la carte. Brancher la carte avec le câble USB, puis ouvrir <b>Outils → Port</b> : un port <b>COM</b> apparaît (ici <b>COM7</b> ; le numéro change d’un ordinateur à l’autre). Le sélectionner.</p>
+<figure><img src="img/figure_06.png" alt="" loading="lazy" style="max-width:359px"><figcaption><em><b>Figure 6 – </b></em><em>Détection de la carte ESP32 sur le port COM7</em></figcaption></figure>
+<div class="note "><p class="nt">Aucun port COM n’apparaît ?</p><ul><li>Essayer un autre câble : beaucoup de câbles micro-USB ne servent qu’à la charge.</li><li>Installer le pilote de la puce USB de la carte (<b>CP210x</b>, parfois <b>CH340</b>), puis rebrancher la carte.</li></ul></div>
+<h3>2.3 Téléverser un premier programme</h3>
+<p>Ce premier programme envoie un message à l’ordinateur par la <b>liaison série</b> (le câble USB). Recopier le code suivant dans un nouveau croquis :</p>
+<pre><code>void setup() {
+    Serial.begin(115200);
+    Serial.print(&quot;Test communication !&quot;);
+}
+void loop() {
+}</code></pre>
+<p class="pel"><em><b>Figure 7 – </b></em><em>Envoi d’un message test par la liaison série</em></p>
+<p>Cliquer sur le bouton <b>Téléverser</b> (la flèche vers la droite). L’Arduino IDE compile le programme, puis l’envoie sur la carte. La loupe, en haut à droite, ouvre le <b>moniteur série</b>.</p>
+<figure><img src="img/figure_07.png" alt="" loading="lazy" style="max-width:359px"><figcaption><em><b>Figure 8 – </b></em><em>Téléversement du programme</em></figcaption></figure>
+<p>Pendant le téléversement, la zone noire en bas de la fenêtre affiche des informations comme celles-ci :</p>
+<pre><code>Le croquis utilise 260145 octets (19%) de l&#x27;espace de stockage de programmes.
+Le maximum est de 1310720 octets.
+Les variables globales utilisent 21344 octets (6%) de mémoire dynamique, ce qui
+laisse 306336 octets pour les variables locales. Le maximum est de 327680 octets.
+esptool.py v4.5.1
+Serial port COM7
+Connecting...........</code></pre>
+<div class="note "><p class="nt">Le téléversement échoue ?</p><p>Si un message d’erreur apparaît pendant <b>Connecting…</b>, relancer le téléversement et <b>maintenir le bouton BOOT</b> enfoncé dès que « Connecting… » s’affiche. Le relâcher quand le pourcentage d’écriture commence à défiler.</p></div>
+<h3>2.4 Lire les messages dans le moniteur série</h3>
+<p>Dans le moniteur série, on règle la <b>vitesse de transmission</b>, en bauds. Elle doit être la même que celle indiquée dans <code>Serial.begin()</code>. Avec une carte Arduino, on utilise souvent 9600 bauds ; avec l’ESP32, on utilise <b>115200 bauds</b>, car c’est la vitesse à laquelle la carte envoie ses messages de démarrage.</p>
+<p>Dès que le téléversement est terminé, l’ESP32 exécute le programme. Le message « Test communication ! » est donc envoyé tout de suite, souvent avant l’ouverture du moniteur série. Contrairement à l’Arduino Uno, l’ESP32 <b>ne redémarre pas</b> quand on ouvre le moniteur série. Pour voir le message, il faut :</p>
+<ul><li>soit ouvrir le moniteur série <b>avant la fin</b> du téléversement ;</li><li>soit appuyer sur le bouton <b>EN</b> de la carte pour la redémarrer.</li></ul>
+<figure><img src="img/figure_08.png" alt="" loading="lazy" style="max-width:510px"><figcaption><em><b>Figure 9 – </b></em><em>Résultat du programme dans le moniteur série (réglé sur 115200 baud)</em></figcaption></figure>
+<p>Les lignes qui précèdent le message sont les informations de démarrage de l’ESP32. Elles ne s’affichent correctement qu’à 115200 bauds : à une autre vitesse, on voit des caractères illisibles.</p>
+</section>
+<section><h2>3. Les bases du langage</h2>
+<p>Les programmes Arduino sont écrits en <b>C++</b>, un langage issu du C. On y retrouve des <b>fonctions</b> (des blocs d’instructions qui portent un nom) et des <b>bibliothèques</b> (des fonctions déjà écrites, comme <code>Serial</code>, que l’on peut utiliser dans son programme). Chaque instruction se termine par un point-virgule <code>;</code>.</p>
+<h3>3.1 La structure d’un programme</h3>
+<p>Tout programme contient au minimum deux fonctions :</p>
+<pre><code>// fonction d&#x27;initialisation : exécutée une seule fois, au démarrage de la carte
+void setup() {
+  // contenu de l&#x27;initialisation
+}
+// fonction principale : elle se répète à l&#x27;infini
+void loop() {
+  // contenu de votre programme
+}</code></pre>
+<p class="pel"><em><b>Figure 10 – </b></em><em>Le code minimal d’un programme Arduino</em></p>
+<p>Tout ce qui suit <code>//</code> sur une ligne est un <b>commentaire</b> : le texte est ignoré par la carte et sert à expliquer le programme.</p>
+<h3>3.2 La liaison série</h3>
+<p>La liaison série fait passer les données <b>bit par bit</b>, c’est-à-dire des 0 et des 1, les uns après les autres. Sa vitesse s’exprime en <b>bauds</b>. Pour une liaison série comme celle-ci, 1 baud correspond à 1 bit par seconde : à 9600 bauds, on transmet 9600 bits par seconde. Les vitesses les plus courantes sont 9600, 19200 et 115200 bauds.</p>
+<pre><code>void setup() {
+  // démarrage de la liaison série à 115200 bauds
+  Serial.begin(115200);
+}</code></pre>
+<p class="pel"><em><b>Figure 11 – </b></em><em>Démarrage de la liaison série</em></p>
+<p>La fonction <code>Serial.print()</code> envoie des données : un caractère, un texte (entre guillemets) ou un nombre. <code>Serial.println()</code> fait la même chose, puis passe à la ligne.</p>
+<pre><code>void setup() {
+  Serial.begin(115200);
+  Serial.println(&quot;Hello !&quot;);       // texte
+  Serial.println(42);              // nombre entier
+  Serial.println(3.1415926535);    // nombre décimal : affiche 3.14
+}</code></pre>
+<p class="pel"><em><b>Figure 12 – </b></em><em>Envoyer du texte et des nombres</em></p>
+<p>Par défaut, un nombre décimal s’affiche avec <b>2 chiffres après la virgule</b>. Un second paramètre permet de choisir ce nombre de chiffres :</p>
+<pre><code>void setup() {
+  Serial.begin(115200);
+  Serial.println(3.1415926535, 0);   // affiche 3
+  Serial.println(3.1415926535, 2);   // affiche 3.14 (valeur par défaut)
+  Serial.println(3.1415926535, 4);   // affiche 3.1416
+}</code></pre>
+<p class="pel"><em><b>Figure 13 – </b></em><em>Choisir le nombre de décimales</em></p>
+<p>Attention : en programmation, la virgule des nombres décimaux s’écrit avec un <b>point</b> : <code>3.14</code> et non <code>3,14</code>.</p>
+<h3>3.3 Les variables</h3>
+<p>Une <b>variable</b> est une case mémoire qui porte un nom et contient une valeur. Avant de l’utiliser, on la <b>déclare</b> en donnant son type et son nom, et on peut lui donner une valeur de départ :</p>
+<pre><code>type nomVariable = valeur;
+int compteur = 0;           // un nombre entier
+float temperature = 21.5;   // un nombre décimal</code></pre>
+<div class="tbl"><table><tr><th><p><b>Type</b></p></th><th><p><b>Ce qu’il stocke</b></p></th><th><p><b>Valeurs possibles sur ESP32</b></p></th><th><p><b>Taille</b></p></th></tr><tr><td><p><code>bool</code></p></td><td><p>vrai ou faux</p></td><td><p><code>true</code> ou <code>false</code></p></td><td><p>1 octet</p></td></tr><tr><td><p><code>char</code></p></td><td><p>un caractère</p></td><td><p>une lettre, un chiffre ou un signe : <code>&#x27;A&#x27;</code></p></td><td><p>1 octet</p></td></tr><tr><td><p><code>byte</code></p></td><td><p>un entier positif</p></td><td><p>0 à 255</p></td><td><p>1 octet</p></td></tr><tr><td><p><code>int</code></p></td><td><p>un entier</p></td><td><p>−2 147 483 648 à +2 147 483 647</p></td><td><p>4 octets</p></td></tr><tr><td><p><code>long</code></p></td><td><p>un entier</p></td><td><p>−2 147 483 648 à +2 147 483 647</p></td><td><p>4 octets</p></td></tr><tr><td><p><code>float</code></p></td><td><p>un décimal</p></td><td><p>±3,4 × 10³⁸, environ 7 chiffres significatifs</p></td><td><p>4 octets</p></td></tr><tr><td><p><code>double</code></p></td><td><p>un décimal précis</p></td><td><p>±1,7 × 10³⁰⁸, environ 15 chiffres significatifs</p></td><td><p>8 octets</p></td></tr></table></div>
+<p class="pel"><em><b>Tableau 2 – </b></em><em>Les principaux types de variables sur ESP32</em></p>
+<div class="note "><p class="nt">Même programme, autre carte</p><p>La taille de certains types dépend du microcontrôleur. Sur l’Arduino Uno, un <code>int</code> ne fait que 2 octets (−32 768 à +32 767) et un <code>double</code> est identique à un <code>float</code>. Un programme qui fonctionne sur ESP32 peut donc donner des résultats faux sur une autre carte.</p></div>
+<p>Une variable <b>booléenne</b> ne peut prendre que deux valeurs : <code>true</code> (vrai) ou <code>false</code> (faux).</p>
+<pre><code>bool ledAllumee = false;   // faux : la LED est éteinte
+ledAllumee = true;         // vrai : la LED est allumée</code></pre>
+<p class="pel"><em><b>Figure 14 – </b></em><em>Les variables booléennes</em></p>
+<h3>3.4 Les opérations</h3>
+<p>Le signe <code>=</code> n’est pas une égalité mathématique : il <b>range</b> le résultat du calcul de droite dans la variable de gauche.</p>
+<div class="tbl"><table><tr><th><p><b>Opération</b></p></th><th><p><b>Symbole</b></p></th><th><p><b>Exemple</b></p></th><th><p><b>Résultat</b></p></th></tr><tr><td><p>Addition</p></td><td><p><code>+</code></p></td><td><p><code>x = 12 + 3;</code></p></td><td><p>x vaut 15</p></td></tr><tr><td><p>Soustraction</p></td><td><p><code>-</code></p></td><td><p><code>x = 12 - 3;</code></p></td><td><p>x vaut 9</p></td></tr><tr><td><p>Multiplication</p></td><td><p><code>*</code></p></td><td><p><code>x = 12 * 3;</code></p></td><td><p>x vaut 36</p></td></tr><tr><td><p>Division</p></td><td><p><code>/</code></p></td><td><p><code>x = 15.0 / 6;</code></p></td><td><p>x vaut 2.5 (si x est un float)</p></td></tr><tr><td><p>Modulo (reste de la division)</p></td><td><p><code>%</code></p></td><td><p><code>x = 18 % 5;</code></p></td><td><p>x vaut 3 (18 = 3 × 5 + 3)</p></td></tr></table></div>
+<p class="pel"><em><b>Tableau 3 – </b></em><em>Les opérations de base</em></p>
+<p>On peut calculer avec des variables :</p>
+<pre><code>int x = 38;
+int y = 10;
+int z = 0;
+z = x + y;   // z vaut 38 + 10 = 48
+z = z * 2;   // z vaut 48 * 2 = 96</code></pre>
+<p class="pel"><em><b>Figure 15 – </b></em><em>Calculer avec des variables</em></p>
+<h4>Le piège de la division entière</h4>
+<p>Quand on divise deux nombres <b>entiers</b>, le résultat est lui aussi un entier : la partie décimale est <b>supprimée</b> (et non arrondie).</p>
+<pre><code>float y = 15;
+float x = 6;
+int z = 0;
+z = y / x;   // 15 / 6 = 2.5, mais z est un int : z vaut 2 !
+int a = 1 / 10;       // a vaut 0 : 1 et 10 sont des entiers
+float b = 1 / 10;     // b vaut aussi 0 : calcul fait en entiers
+float c = 1.0 / 10;   // c vaut 0.1 : 1.0 est un décimal</code></pre>
+<p class="pel"><em><b>Figure 16 – </b></em><em>Division entière et division décimale</em></p>
+<p>Pour obtenir un résultat décimal, il faut qu’au moins un des deux nombres soit décimal (<code>1.0</code> au lieu de <code>1</code>) et ranger le résultat dans une variable de type <code>float</code>.</p>
+<h4>Le modulo</h4>
+<p>Le <b>modulo</b> <code>%</code> donne le reste d’une division entière. Il ne s’utilise qu’avec des nombres entiers. Il sert par exemple à savoir si un nombre est pair (<code>n % 2</code> vaut 0) ou à revenir à zéro tous les N tours.</p>
+<pre><code>18 % 6   // reste 0, car 18 = 3 × 6
+18 % 5   // reste 3, car 18 = 3 × 5 + 3
+24 % 7   // reste 3, car 24 = 3 × 7 + 3</code></pre>
+<p class="pel"><em><b>Figure 17 – </b></em><em>Le modulo</em></p>
+<h4>Les écritures raccourcies</h4>
+<div class="tbl"><table><tr><th><p><b>Écriture courte</b></p></th><th><p><b>Équivaut à</b></p></th><th><p><b>Nom</b></p></th></tr><tr><td><p><code>x++;</code></p></td><td><p><code>x = x + 1;</code></p></td><td><p>incrémentation</p></td></tr><tr><td><p><code>x--;</code></p></td><td><p><code>x = x - 1;</code></p></td><td><p>décrémentation</p></td></tr><tr><td><p><code>x += y;</code></p></td><td><p><code>x = x + y;</code></p></td><td><p>opération composée</p></td></tr><tr><td><p><code>x -= y;</code></p></td><td><p><code>x = x - y;</code></p></td><td><p>opération composée</p></td></tr><tr><td><p><code>x *= y;</code></p></td><td><p><code>x = x * y;</code></p></td><td><p>opération composée</p></td></tr><tr><td><p><code>x /= y;</code></p></td><td><p><code>x = x / y;</code></p></td><td><p>opération composée</p></td></tr></table></div>
+<p class="pel"><em><b>Tableau 4 – </b></em><em>Les écritures raccourcies</em></p>
+<p>Si l’on exécute <code>var++;</code> 30 fois à partir de <code>var = 0</code>, la variable <code>var</code> vaut 30.</p>
+<h4>La bascule</h4>
+<p>Une <b>bascule</b> fait passer une variable booléenne de 0 à 1, puis de 1 à 0, et ainsi de suite. C’est utile pour faire clignoter une LED. On peut l’écrire de deux façons :</p>
+<pre><code>bool x = 0;
+x = 1 - x;   // 1er passage : x = 1 - 0 = 1
+             // 2e passage  : x = 1 - 1 = 0
+             // 3e passage  : x = 1 - 0 = 1 ...
+x = !x;      // même résultat : ! signifie « le contraire de »</code></pre>
+<p class="pel"><em><b>Figure 18 – </b></em><em>Deux façons d’écrire une bascule</em></p>
+<p>Placée dans <code>loop()</code>, cette instruction s’exécute à chaque tour : la valeur de <code>x</code> alterne sans fin.</p>
+<h3>3.5 La boucle for</h3>
+<p>La boucle <b>for</b> répète un bloc d’instructions un <b>nombre de fois connu à l’avance</b>.</p>
+<pre><code>for (int t = 0; t &lt; 10; t++) {
+  // instructions à répéter
+  Serial.println(t);   // affiche 0, 1, 2 ... jusqu&#x27;à 9
+}</code></pre>
+<p class="pel"><em><b>Figure 19 – </b></em><em>La boucle for</em></p>
+<p>Les parenthèses contiennent trois éléments, séparés par des points-virgules :</p>
+<ul><li><code>int t = 0</code> : la variable qui compte les tours et sa valeur de départ ;</li><li><code>t &lt; 10</code> : la condition pour continuer ; la boucle s’arrête dès qu’elle devient fausse ;</li><li><code>t++</code> : ce qui se passe à la fin de chaque tour (ici, on ajoute 1 à <code>t</code>).</li></ul>
+<p>Le bloc d’instructions à répéter est placé entre accolades <code>{ }</code>. Ici, il est exécuté <b>10 fois</b>, pour <code>t</code> allant de 0 à 9.</p>
+<h3>3.6 Les conditions</h3>
+<p>Une condition compare deux valeurs. Le résultat est vrai ou faux.</p>
+<div class="tbl"><table><tr><th><p><b>Symbole</b></p></th><th><p><b>Ce qu’il teste</b></p></th><th><p><b>Se lit</b></p></th></tr><tr><td><p><code>==</code></p></td><td><p>l’égalité entre deux valeurs</p></td><td><p>… est égal à …</p></td></tr><tr><td><p><code>!=</code></p></td><td><p>la différence entre deux valeurs</p></td><td><p>… est différent de …</p></td></tr><tr><td><p><code>&lt;</code></p></td><td><p>une valeur plus petite qu’une autre</p></td><td><p>… est inférieur à …</p></td></tr><tr><td><p><code>&gt;</code></p></td><td><p>une valeur plus grande qu’une autre</p></td><td><p>… est supérieur à …</p></td></tr><tr><td><p><code>&lt;=</code></p></td><td><p>plus petite ou égale</p></td><td><p>… est inférieur ou égal à …</p></td></tr><tr><td><p><code>&gt;=</code></p></td><td><p>plus grande ou égale</p></td><td><p>… est supérieur ou égal à …</p></td></tr></table></div>
+<p class="pel"><em><b>Tableau 5 – </b></em><em>Les symboles de comparaison</em></p>
+<div class="note "><p class="nt">Ne pas confondre = et ==</p><p><code>x = 5</code> range la valeur 5 dans <code>x</code>. <code>x == 5</code> teste si <code>x</code> vaut 5. Écrire <code>if (x = 5)</code> est une erreur fréquente : la condition est alors toujours vraie.</p></div>
+<h4>La condition if</h4>
+<p>Le bloc de code n’est exécuté <b>que si</b> la condition est vraie. Sinon, le programme passe à la suite.</p>
+<pre><code>if (condition) {
+  // exécuté seulement si la condition est vraie
+}</code></pre>
+<p class="pel"><em><b>Figure 20 – </b></em><em>La condition if</em></p>
+<h4>La condition if … else</h4>
+<p>Le bloc <b>else</b> (« sinon ») est exécuté quand la condition du <code>if</code> est fausse.</p>
+<pre><code>if (temperature &gt; 25) {
+  Serial.println(&quot;Il fait chaud&quot;);      // si la condition est vraie
+}
+else {
+  Serial.println(&quot;Il ne fait pas chaud&quot;); // si la condition est fausse
+}</code></pre>
+<p class="pel"><em><b>Figure 21 – </b></em><em>La condition if … else</em></p>
+<h4>La condition if … else if … else</h4>
+<p>Le <b>else if</b> teste une nouvelle condition quand la précédente est fausse. On peut en enchaîner autant que nécessaire. Dès qu’une condition est vraie, son bloc est exécuté et les suivants sont ignorés.</p>
+<pre><code>if (condition1) {
+  // exécuté si condition1 est vraie
+}
+else if (condition2) {
+  // exécuté si condition1 est fausse et condition2 vraie
+}
+else if (condition3) {
+  // exécuté si condition1 et condition2 sont fausses et condition3 vraie
+}
+else {
+  // exécuté si toutes les conditions sont fausses
+}</code></pre>
+<p class="pel"><em><b>Figure 22 – </b></em><em>La condition if … else if … else</em></p>
+<h4>Les opérateurs logiques</h4>
+<p>Ils combinent plusieurs conditions.</p>
+<div class="tbl"><table><tr><th><p><b>Opérateur</b></p></th><th><p><b>Signification</b></p></th><th><p><b>Exemple</b></p></th></tr><tr><td><p><code>&amp;&amp;</code></p></td><td><p>… ET … : vrai si les deux conditions sont vraies</p></td><td><p><code>if (t &gt; 18 &amp;&amp; t &lt; 25)</code></p></td></tr><tr><td><p><code>||</code></p></td><td><p>… OU … : vrai si au moins une condition est vraie</p></td><td><p><code>if (t &lt; 5 || t &gt; 35)</code></p></td></tr><tr><td><p><code>!</code></p></td><td><p>NON : inverse la condition</p></td><td><p><code>if (!ledAllumee)</code></p></td></tr></table></div>
+<p class="pel"><em><b>Tableau 6 – </b></em><em>Les opérateurs logiques</em></p>
+</section>
+<section><h2>4. Mise en pratique : faire clignoter la LED bleue</h2>
+<p>Ce programme réunit les notions du TP. Il fait clignoter la LED bleue de la carte et affiche dans le moniteur série le nombre de clignotements. Deux nouvelles fonctions sont utilisées :</p>
+<ul><li><code>pinMode(broche, OUTPUT)</code> : déclare une broche comme <b>sortie</b> ;</li><li><code>digitalWrite(broche, HIGH)</code> ou <code>digitalWrite(broche, LOW)</code> : met la broche à 3,3 V (LED allumée) ou à 0 V (LED éteinte) ;</li><li><code>delay(500)</code> : met le programme en pause pendant 500 millisecondes.</li></ul>
+<pre><code>const int LED = 2;   // la LED bleue est reliée à la broche GPIO 2
+int compteur = 0;
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+}
+void loop() {
+  digitalWrite(LED, HIGH);   // allume la LED
+  delay(500);
+  digitalWrite(LED, LOW);    // éteint la LED
+  delay(500);
+  compteur++;
+  Serial.print(&quot;Clignotements : &quot;);
+  Serial.println(compteur);
+  if (compteur % 10 == 0) {
+    Serial.println(&quot;10 clignotements de plus !&quot;);
+  }
+}</code></pre>
+<p class="pel"><em><b>Figure 23 – </b></em><em>Faire clignoter la LED bleue et compter les clignotements</em></p>
+<p>Téléverser le programme, ouvrir le moniteur série à 115200 bauds et vérifier que la LED clignote une fois par seconde et que le compteur augmente.</p>
+</section>
+<footer>Céline Dobigeon — IUT, Université de Bordeaux · <a href="../index.html">Retour à l'accueil</a></footer>
+</div>
+</body>
+</html>

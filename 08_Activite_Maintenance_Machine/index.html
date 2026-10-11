@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Activité – Maintenance préventive d&#x27;une machine connectée — Internet des objets (IoT)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fiche.css">
+</head>
+<body>
+<div class="crumb"><div class="in">
+  <a href="../index.html"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="18" width="22" height="22" rx="3"/><path d="M18 13a9 9 0 0 1 12 0"/><path d="M14 8a15 15 0 0 1 20 0"/><path d="M19 40v4M29 40v4M8 25h5M8 33h5M35 25h5M35 33h5"/></svg>Internet des objets (IoT)</a><span class="sep">/</span>
+  <a href="../index.html#activite">Activité</a><span class="sep">/</span>
+  <b>Activité maintenance</b>
+</div></div>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Activité — IoT · 08</p>
+  <h1>Activité – Maintenance préventive d&#x27;une machine connectée</h1>
+  <p class="lede">Un bras motorisé surveillé par un potentiomètre, un capteur ultrason et un DHT11 : compteur de cycles, seuils d&#x27;alerte et d&#x27;alarme, arrêt automatique et page web.</p>
+  <div class="meta"><span class="tag">Maintenance</span><span class="tag">SG90</span><span class="tag">HC-SR04</span><span class="tag">DHT11</span></div>
+</header>
+<section class="ress"><h2>Ressources</h2><div class="liens"><a href="Animation_Maintenance_Machine.html"><span class="fl">↗</span><span><b>Ouvrir l'animation</b> · Animation_Maintenance_Machine.html<span class="d">Simulation de la machine : cycles, effort, niveau de lubrifiant, armoire électrique</span></span></a><a href="ESP32_Maintenance_Machine/ESP32_Maintenance_Machine.ino" download="ESP32_Maintenance_Machine.ino"><span class="fl">↓</span><span><b>Télécharger ESP32_Maintenance_Machine.ino</b><span class="d">Le programme Arduino : saisir le Wi-Fi, installer ESP32Servo et DHT sensor library</span></span></a></div></section>
+
+<section><h2>1. Objectifs</h2>
+<ul><li>Câbler une machine pédagogique : un bras motorisé surveillé par plusieurs capteurs.</li><li>Mettre en œuvre la maintenance préventive systématique (compteur de cycles) et conditionnelle (seuils sur des mesures).</li><li>Observer les alertes, l&#x27;arrêt automatique de sécurité et la remise en service après entretien.</li><li>Consulter l&#x27;état de la machine à distance, sur une page web.</li></ul>
+</section>
+<section><h2>2. La machine pédagogique</h2>
+<p>On simule un poste automatisé : un bras manipule des pièces en continu. Son mécanisme doit être lubrifié, son moteur ne doit pas forcer, et son armoire électrique doit rester sèche et pas trop chaude. Chaque composant joue un rôle :</p>
+<div class="tbl"><table><tr><th><p><b>Composant</b></p></th><th><p><b>Ce qu&#x27;il représente</b></p></th><th><p><b>Type de maintenance</b></p></th><th><p><b>Seuils (alerte / alarme)</b></p></th></tr><tr><td><p>Servomoteur SG90</p></td><td><p>Le bras de la machine, qui fait des cycles</p></td><td><p>Systématique : entretien tous les 50 cycles</p></td><td><p>40 cycles / 50 cycles</p></td></tr><tr><td><p>Potentiomètre</p></td><td><p>L&#x27;effort du moteur (il augmente si le mécanisme s&#x27;use ou se grippe)</p></td><td><p>Conditionnelle</p></td><td><p>60 % / 85 %</p></td></tr><tr><td><p>Capteur ultrason HC-SR04</p></td><td><p>Le niveau du bac de lubrifiant (distance entre le capteur et la surface)</p></td><td><p>Conditionnelle</p></td><td><p>30 % / 10 % (niveau bas)</p></td></tr><tr><td><p>Capteur DHT11</p></td><td><p>La température et l&#x27;humidité de l&#x27;armoire électrique</p></td><td><p>Conditionnelle</p></td><td><p>30 °C / 40 °C ; humidité : alerte à 80 %</p></td></tr><tr><td><p>Bouton noir</p></td><td><p>Marche / arrêt de la machine</p></td><td></td><td></td></tr><tr><td><p>Bouton bleu</p></td><td><p>« Entretien effectué » : remet le compteur de cycles à zéro</p></td><td></td><td></td></tr><tr><td><p>3 LED</p></td><td><p>État de la machine : vert = normal, orange = alerte, rouge = alarme</p></td><td></td><td></td></tr></table></div>
+<div class="note "><p class="nt">Règles de fonctionnement</p><ul><li>L&#x27;état de la machine est celui de l&#x27;indicateur le plus grave.</li><li>ALERTE (orange) : la machine continue, mais il faut prévoir une intervention.</li><li>ALARME (rouge) : la machine s&#x27;arrête automatiquement et refuse de redémarrer tant que la cause n&#x27;est pas traitée.</li><li>Après l&#x27;entretien périodique, l&#x27;opérateur appuie sur « Entretien effectué » pour remettre le compteur à zéro.</li></ul></div>
+</section>
+<section><h2>3. Matériel</h2>
+<div class="tbl"><table><tr><th><p><b>Matériel</b></p></th><th><p><b>Remarque</b></p></th></tr><tr><td><p>1 carte DOIT ESP32 DEVKIT V1 + câble micro-USB</p></td><td></td></tr><tr><td><p>1 servomoteur SG90</p></td><td><p>Alimenté en 5 V (broche VIN)</p></td></tr><tr><td><p>1 potentiomètre</p></td><td><p>10 kΩ par exemple</p></td></tr><tr><td><p>1 capteur ultrason HC-SR04</p></td><td><p>Alimenté en 5 V</p></td></tr><tr><td><p>1 capteur DHT11 (module 3 broches)</p></td><td><p>Un DHT11 nu à 4 broches demande en plus une résistance de 10 kΩ entre DATA et VCC</p></td></tr><tr><td><p>2 boutons poussoirs</p></td><td><p>Pas de résistance nécessaire</p></td></tr><tr><td><p>3 LED (verte, orange, rouge) + 3 résistances de 220 Ω</p></td><td></td></tr><tr><td><p>1 résistance de 1 kΩ + 1 résistance de 2 kΩ</p></td><td><p>Pont diviseur pour la broche ECHO (2 kΩ = deux résistances de 1 kΩ en série)</p></td></tr><tr><td><p>1 ou 2 plaques d&#x27;essai + fils de connexion</p></td><td></td></tr><tr><td><p>1 morceau de carton</p></td><td><p>Simule la surface du lubrifiant devant le capteur ultrason</p></td></tr></table></div>
+</section>
+<section><h2>4. Câblage</h2>
+<figure><img src="img/figure_01.png" alt="" loading="lazy" style="max-width:661px"><figcaption><em>Figure 1 – Câblage de la machine pédagogique</em></figcaption></figure>
+<div class="tbl"><table><tr><th><p><b>Composant</b></p></th><th><p><b>Broche du composant</b></p></th><th><p><b>Relier à</b></p></th></tr><tr><td><p>Potentiomètre</p></td><td><p>Broche extrême / curseur (milieu) / autre broche extrême</p></td><td><p>3V3 / D34 / GND</p></td></tr><tr><td><p>Servomoteur SG90</p></td><td><p>Fil marron / rouge / orange</p></td><td><p>GND / VIN (5 V) / D32</p></td></tr><tr><td><p>HC-SR04</p></td><td><p>VCC / GND</p></td><td><p>VIN (5 V) / GND</p></td></tr><tr><td><p>HC-SR04</p></td><td><p>TRIG</p></td><td><p>D33</p></td></tr><tr><td><p>HC-SR04</p></td><td><p>ECHO</p></td><td><p>résistance 1 kΩ → D25, et résistance 2 kΩ entre D25 et GND</p></td></tr><tr><td><p>DHT11</p></td><td><p>VCC / DATA / GND</p></td><td><p>3V3 / D4 / GND</p></td></tr><tr><td><p>Bouton Marche / Arrêt</p></td><td><p>une patte / l&#x27;autre patte</p></td><td><p>D23 / GND</p></td></tr><tr><td><p>Bouton Entretien effectué</p></td><td><p>une patte / l&#x27;autre patte</p></td><td><p>D22 / GND</p></td></tr><tr><td><p>LED verte, orange, rouge</p></td><td><p>patte longue (+) via 220 Ω / patte courte (–)</p></td><td><p>D21, D19, D18 / GND</p></td></tr></table></div>
+<div class="note warn"><p class="nt">Attention</p><ul><li>La broche ECHO du HC-SR04 envoie du 5 V : sans le pont diviseur, elle peut endommager l&#x27;ESP32 (ses entrées acceptent au plus 3,3 V).</li><li>Le potentiomètre et le DHT11 sont alimentés en 3,3 V (broche 3V3). Le servomoteur et le HC-SR04 en 5 V (broche VIN).</li><li>Toutes les masses (GND) doivent être reliées entre elles.</li><li>Câbler carte débranchée, et faire vérifier avant de brancher.</li></ul></div>
+<ul class="check"><li>Câblage vérifié par l&#x27;enseignant</li></ul>
+</section>
+<section><h2>5. Le programme</h2>
+<p>Le programme complet est fourni : dossier ESP32_Maintenance_Machine (fichier <a href="ESP32_Maintenance_Machine/ESP32_Maintenance_Machine.ino" download="ESP32_Maintenance_Machine.ino">ESP32_Maintenance_Machine.ino</a>, reproduit en annexe).</p>
+<ol><li>Installez les bibliothèques <code>ESP32Servo</code> et <code>DHT sensor library</code> (Outils &gt; Gérer les bibliothèques).</li><li>Vérifiez le nom et le mot de passe du réseau Wi-Fi (<code>ssid</code>, <code>password</code>).</li><li>Choisissez la carte <code>DOIT ESP32 DEVKIT V1</code> et le port, puis téléversez.</li><li>Ouvrez le moniteur série (<code>115200 bauds</code>) et notez l&#x27;adresse IP. Ouvrez la page <code>http://&lt;adresse IP&gt;</code> sur un téléphone connecté au même Wi-Fi.</li></ol>
+<p>Notez sur votre feuille l&#x27;adresse IP de la carte (par exemple 192.168.1.42) : vous en aurez besoin pour ouvrir la page.</p>
+<p><b>Ce que fait le programme :</b></p>
+<ul><li>Toutes les 200 ms : il lit l&#x27;effort (potentiomètre) et le niveau (HC-SR04), puis décide de l&#x27;état de la machine.</li><li>Toutes les 2 s : il lit la température et l&#x27;humidité (DHT11) et affiche toutes les valeurs dans le moniteur série.</li><li>En marche : le bras monte et descend toutes les 1,5 s ; chaque retour en position basse ajoute un cycle au compteur.</li><li>En alarme : il arrête la machine. Les boutons permettent de redémarrer et de valider l&#x27;entretien.</li><li>La page web (actualisée toutes les 2 s) affiche chaque indicateur avec sa valeur, ses seuils et son état ; l&#x27;adresse <code>/data</code> donne les données brutes (JSON).</li></ul>
+</section>
+<section><h2>6. Scénarios de test</h2>
+<h3>A. Mise en service</h3>
+<ol><li>Machine arrêtée : relevez l&#x27;état affiché (voyant et page web).</li><li>Appuyez sur le bouton Marche / Arrêt : le bras se met à faire des cycles. Suivez le compteur sur la page web.</li></ol>
+<h3>B. Maintenance systématique : le compteur de cycles</h3>
+<ol><li>Laissez tourner la machine. Que se passe-t-il à 40 cycles ? À 50 cycles ?</li><li>À 50 cycles, essayez de redémarrer la machine avec le bouton Marche / Arrêt. Que se passe-t-il ?</li><li>Appuyez sur « Entretien effectué », puis redémarrez la machine.</li></ol>
+<h3>C. Maintenance conditionnelle : l&#x27;effort du moteur</h3>
+<ol><li>Machine en marche, tournez lentement le potentiomètre. Relevez l&#x27;effort au passage à l&#x27;orange, puis au rouge.</li><li>Ramenez le potentiomètre au minimum (on a « lubrifié » le mécanisme) et redémarrez la machine.</li></ol>
+<h3>D. Maintenance conditionnelle : le niveau de lubrifiant</h3>
+<ol><li>Tenez le carton face au capteur ultrason, à 5 cm (bac plein), puis éloignez-le peu à peu jusqu&#x27;à 20 cm (bac vide).</li><li>Relevez le niveau affiché au passage à l&#x27;orange, puis au rouge. Ramenez le carton à 5 cm (on a « rempli » le bac).</li></ol>
+<h3>E. Maintenance conditionnelle : l&#x27;armoire électrique</h3>
+<ol><li>Soufflez doucement sur le DHT11 : observez l&#x27;humidité. Tenez-le entre vos doigts : observez la température.</li></ol>
+<p class="pel"><em>Remarque : la chaleur des doigts ne suffit pas pour atteindre 40 °C. Pour tester l&#x27;alarme, on peut baisser le seuil TEMP_ALARME dans le programme.</em></p>
+<div class="tbl"><table><tr><th><p><b>Scénario</b></p></th><th><p><b>Indicateur</b></p></th><th><p><b>Valeur au passage à l&#x27;orange</b></p></th><th><p><b>Valeur au passage au rouge</b></p></th><th><p><b>La machine s&#x27;arrête-t-elle ?</b></p></th></tr><tr><td><p>B</p></td><td><p>Cycles</p></td><td></td><td></td><td></td></tr><tr><td><p>C</p></td><td><p>Effort (%)</p></td><td></td><td></td><td></td></tr><tr><td><p>D</p></td><td><p>Niveau (%)</p></td><td></td><td></td><td></td></tr><tr><td><p>E</p></td><td><p>Température / humidité</p></td><td></td><td></td><td></td></tr></table></div>
+</section>
+<section class="questions"><h2>7. Questions</h2>
+<ol><li>Pour chaque indicateur surveillé (cycles, effort, niveau, température, humidité), indiquez s&#x27;il relève de la maintenance systématique ou conditionnelle. Justifiez pour le compteur de cycles.</li><li>Pourquoi la machine s&#x27;arrête-t-elle automatiquement en alarme ? Pourquoi refuse-t-elle de redémarrer tant que la cause n&#x27;a pas été traitée ?</li><li>Le capteur HC-SR04 mesure une durée. Expliquez comment le programme en déduit la distance, puis le niveau de lubrifiant.</li><li>Pourquoi la broche ECHO du HC-SR04 passe-t-elle par un pont diviseur, alors que la broche TRIG est reliée directement à la carte ?</li><li>Dans une vraie usine, par quel capteur remplacerait-on le potentiomètre ? Proposez une amélioration qui permettrait de passer à la maintenance prévisionnelle.</li></ol>
+</section>
+<section><h2>8. Pistes d&#x27;amélioration</h2>
+<ul><li><b>Maintenance prévisionnelle : </b>mesurer la baisse du niveau de lubrifiant par cycle et estimer le nombre de cycles restants avant l&#x27;alerte.</li><li><b>Historique : </b>envoyer les mesures vers Arduino Cloud pour tracer leur évolution et repérer les tendances.</li><li><b>Journal de maintenance : </b>enregistrer la date de chaque entretien et de chaque alarme, et les afficher sur la page web.</li><li><b>Alertes : </b>ajouter un buzzer, ou prévenir le technicien à distance.</li><li><b>Sécurité : </b>protéger la page web par un mot de passe, pour que personne ne puisse agir sur la machine sans autorisation.</li></ul>
+</section>
+<section><h2>Annexe – Programme <a href="ESP32_Maintenance_Machine/ESP32_Maintenance_Machine.ino" download="ESP32_Maintenance_Machine.ino">ESP32_Maintenance_Machine.ino</a></h2>
+<pre><code>// Activité IoT - Maintenance préventive d&#x27;une machine pédagogique
+// Carte : DOIT ESP32 DEVKIT V1
+//
+// La machine : un bras (servomoteur SG90) qui fait des cycles, avec :
+//   - un compteur de cycles           -&gt; maintenance préventive SYSTÉMATIQUE
+//   - l&#x27;effort du moteur (potentiomètre), le niveau du bac de lubrifiant (HC-SR04),
+//     la température et l&#x27;humidité de l&#x27;armoire (DHT11) -&gt; maintenance préventive CONDITIONNELLE
+//   - 3 LED d&#x27;état, 2 boutons (marche/arrêt, entretien effectué), une page web
+//
+// Bibliothèques à installer (Outils &gt; Gérer les bibliothèques) :
+//   - ESP32Servo (Kevin Harrington)
+//   - DHT sensor library (Adafruit) + Adafruit Unified Sensor
+ 
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+#include &lt;ESP32Servo.h&gt;
+#include &lt;DHT.h&gt;
+ 
+const char* ssid = &quot;NOM_DU_RESEAU&quot;;      // nom du réseau Wi-Fi (2,4 GHz)
+const char* password = &quot;MOT_DE_PASSE&quot;;   // mot de passe du réseau Wi-Fi
+ 
+// ---------- Broches
+const int PIN_POT    = 34;   // potentiomètre (entrée analogique compatible Wi-Fi)
+const int PIN_SERVO  = 32;   // servomoteur SG90 (signal)
+const int PIN_TRIG   = 33;   // HC-SR04 TRIG
+const int PIN_ECHO   = 25;   // HC-SR04 ECHO (via pont diviseur 1 kΩ / 2 kΩ)
+const int PIN_DHT    = 4;    // DHT11 DATA
+const int BTN_MARCHE = 23;   // bouton marche / arrêt
+const int BTN_ENTRETIEN = 22; // bouton &quot;entretien effectué&quot;
+const int LED_VERTE  = 21;
+const int LED_ORANGE = 19;
+const int LED_ROUGE  = 18;
+ 
+// ---------- Seuils de maintenance (à adapter)
+const int   CYCLES_PREVENIR  = 40;   // alerte : entretien à prévoir
+const int   CYCLES_ENTRETIEN = 50;   // alarme : entretien obligatoire (systématique)
+const int   EFFORT_ALERTE = 60;      // % d&#x27;effort du moteur
+const int   EFFORT_ALARME = 85;
+const int   NIVEAU_ALERTE = 30;      // % de lubrifiant dans le bac
+const int   NIVEAU_ALARME = 10;
+const float TEMP_ALERTE = 30.0;      // °C dans l&#x27;armoire électrique
+const float TEMP_ALARME = 40.0;
+const float HUM_ALERTE  = 80.0;      // % d&#x27;humidité (alerte seulement)
+ 
+// ---------- Bac de lubrifiant : distance mesurée par le capteur placé au-dessus
+const float DIST_PLEIN = 5.0;        // cm quand le bac est plein
+const float DIST_VIDE  = 20.0;       // cm quand le bac est vide
+ 
+Servo bras;
+DHT dht(PIN_DHT, DHT11);
+WebServer server(80);
+ 
+// ---------- Variables de la machine
+bool enMarche = false;
+bool brasLeve = false;
+int cycles = 0;              // cycles depuis le dernier entretien
+long cyclesTotal = 0;        // cycles depuis la mise en service
+int effort = 0;              // %
+int niveau = 100;            // %
+float distance = 0;          // cm
+float temperature = NAN;     // °C
+float humidite = NAN;        // %
+ 
+// État de chaque indicateur : 0 = normal, 1 = alerte, 2 = alarme
+int eCycles = 0, eEffort = 0, eNiveau = 0, eTemp = 0, eHum = 0;
+int etat = 0;
+String cause = &quot;&quot;;
+const char* NOM_ETAT[] = {&quot;NORMAL&quot;, &quot;ALERTE&quot;, &quot;ALARME&quot;};
+const char* COULEUR[] = {&quot;#2e7d32&quot;, &quot;#ef6c00&quot;, &quot;#c62828&quot;};
+ 
+unsigned long tServo = 0, tMesure = 0, tDht = 0, tBouton = 0;
+int dernierMarche = HIGH, dernierEntretien = HIGH;
+ 
+// ---------- Mesures
+float mesurerDistance() {
+  digitalWrite(PIN_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PIN_TRIG, HIGH);            // impulsion de 10 µs
+  delayMicroseconds(10);
+  digitalWrite(PIN_TRIG, LOW);
+  unsigned long duree = pulseIn(PIN_ECHO, HIGH, 30000);   // attente max 30 ms
+  if (duree == 0) return -1;               // pas d&#x27;écho
+  return duree * 0.0343 / 2;               // vitesse du son : 343 m/s, aller-retour
+}
+ 
+int etatHaut(float v, float alerte, float alarme) {   // plus la valeur est haute, plus c&#x27;est grave
+  if (v &gt;= alarme) return 2;
+  if (v &gt;= alerte) return 1;
+  return 0;
+}
+ 
+// ---------- Décision
+void evaluer() {
+  eCycles = etatHaut(cycles, CYCLES_PREVENIR, CYCLES_ENTRETIEN);
+  eEffort = etatHaut(effort, EFFORT_ALERTE, EFFORT_ALARME);
+  eNiveau = (niveau &lt;= NIVEAU_ALARME) ? 2 : (niveau &lt;= NIVEAU_ALERTE) ? 1 : 0;
+  eTemp = isnan(temperature) ? 0 : etatHaut(temperature, TEMP_ALERTE, TEMP_ALARME);
+  eHum = (!isnan(humidite) &amp;&amp; humidite &gt;= HUM_ALERTE) ? 1 : 0;
+ 
+  etat = max(max(max(eCycles, eEffort), max(eNiveau, eTemp)), eHum);
+ 
+  cause = &quot;&quot;;
+  if (eCycles) cause += &quot;entretien périodique ; &quot;;
+  if (eEffort) cause += &quot;effort du moteur ; &quot;;
+  if (eNiveau) cause += &quot;niveau de lubrifiant ; &quot;;
+  if (eTemp)   cause += &quot;température de l&#x27;armoire ; &quot;;
+  if (eHum)    cause += &quot;humidité de l&#x27;armoire ; &quot;;
+ 
+  // Sécurité : en alarme, la machine s&#x27;arrête automatiquement
+  if (etat == 2 &amp;&amp; enMarche) {
+    enMarche = false;
+    Serial.println(&quot;ARRET AUTOMATIQUE : &quot; + cause);
+  }
+ 
+  digitalWrite(LED_VERTE, etat == 0);
+  digitalWrite(LED_ORANGE, etat == 1);
+  digitalWrite(LED_ROUGE, etat == 2);
+}
+ 
+// ---------- Boutons (appui = niveau bas, grâce à INPUT_PULLUP)
+void lireBoutons() {
+  int m = digitalRead(BTN_MARCHE);
+  int e = digitalRead(BTN_ENTRETIEN);
+  if (millis() - tBouton &gt; 200) {          // anti-rebond
+    if (m == LOW &amp;&amp; dernierMarche == HIGH) {
+      tBouton = millis();
+      if (enMarche) {
+        enMarche = false;
+        Serial.println(&quot;Machine arrêtée par l&#x27;opérateur&quot;);
+      } else if (etat == 2) {
+        Serial.println(&quot;Démarrage refusé : alarme en cours (&quot; + cause + &quot;)&quot;);
+      } else {
+        enMarche = true;
+        Serial.println(&quot;Machine en marche&quot;);
+      }
+    }
+    if (e == LOW &amp;&amp; dernierEntretien == HIGH) {
+      tBouton = millis();
+      cycles = 0;
+      Serial.println(&quot;Entretien effectué : compteur de cycles remis à zéro&quot;);
+      evaluer();
+    }
+  }
+  dernierMarche = m;
+  dernierEntretien = e;
+}
+ 
+// ---------- Page web (actualisée toutes les 2 secondes)
+void ligne(String &amp;html, const char* nom, String valeur, String seuils, int e) {
+  html += &quot;&lt;tr&gt;&lt;td&gt;&quot;; html += nom; html += &quot;&lt;/td&gt;&lt;td&gt;&lt;b&gt;&quot;; html += valeur;
+  html += &quot;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&quot;; html += seuils; html += &quot;&lt;/td&gt;&lt;td style=&#x27;color:white;background:&quot;;
+  html += COULEUR[e]; html += &quot;&#x27;&gt;&quot;; html += NOM_ETAT[e]; html += &quot;&lt;/td&gt;&lt;/tr&gt;&quot;;
+}
+ 
+String page() {
+  String html = &quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&quot;;
+  html += &quot;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width&#x27;&gt;&quot;;
+  html += &quot;&lt;meta http-equiv=&#x27;refresh&#x27; content=&#x27;2&#x27;&gt;&lt;title&gt;Maintenance machine&lt;/title&gt;&quot;;
+  html += &quot;&lt;style&gt;body{font-family:sans-serif;max-width:560px;margin:auto;padding:8px}&quot;;
+  html += &quot;table{border-collapse:collapse;width:100%}td{border:1px solid #ccc;padding:6px}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&quot;;
+  html += &quot;&lt;h1&gt;Machine : &quot;;
+  html += enMarche ? &quot;EN MARCHE&quot; : &quot;ARRÊTÉE&quot;;
+  html += &quot;&lt;/h1&gt;&lt;p style=&#x27;font-size:1.4em;color:white;padding:10px;border-radius:8px;background:&quot;;
+  html += COULEUR[etat]; html += &quot;&#x27;&gt;État : &quot;; html += NOM_ETAT[etat]; html += &quot;&lt;/p&gt;&quot;;
+  if (etat &gt; 0) { html += &quot;&lt;p&gt;Cause : &quot;; html += cause; html += &quot;&lt;/p&gt;&quot;; }
+  html += &quot;&lt;table&gt;&lt;tr&gt;&lt;td&gt;Indicateur&lt;/td&gt;&lt;td&gt;Valeur&lt;/td&gt;&lt;td&gt;Seuils&lt;/td&gt;&lt;td&gt;État&lt;/td&gt;&lt;/tr&gt;&quot;;
+  ligne(html, &quot;Cycles depuis l&#x27;entretien&quot;, String(cycles),
+        &quot;alerte &quot; + String(CYCLES_PREVENIR) + &quot;, entretien &quot; + String(CYCLES_ENTRETIEN), eCycles);
+  ligne(html, &quot;Effort du moteur&quot;, String(effort) + &quot; %&quot;,
+        String(EFFORT_ALERTE) + &quot; % / &quot; + String(EFFORT_ALARME) + &quot; %&quot;, eEffort);
+  ligne(html, &quot;Niveau de lubrifiant&quot;, String(niveau) + &quot; %&quot;,
+        String(NIVEAU_ALERTE) + &quot; % / &quot; + String(NIVEAU_ALARME) + &quot; %&quot;, eNiveau);
+  ligne(html, &quot;Température armoire&quot;, isnan(temperature) ? String(&quot;—&quot;) : String(temperature, 0) + &quot; °C&quot;,
+        String(TEMP_ALERTE, 0) + &quot; °C / &quot; + String(TEMP_ALARME, 0) + &quot; °C&quot;, eTemp);
+  ligne(html, &quot;Humidité armoire&quot;, isnan(humidite) ? String(&quot;—&quot;) : String(humidite, 0) + &quot; %&quot;,
+        String(HUM_ALERTE, 0) + &quot; %&quot;, eHum);
+  html += &quot;&lt;/table&gt;&lt;p&gt;Cycles depuis la mise en service : &quot;;
+  html += String(cyclesTotal);
+  html += &quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&quot;;
+  return html;
+}
+ 
+void handleRoot() {
+  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+}
+ 
+// Données brutes au format JSON (pour un tableau de bord ou un tableur)
+void handleData() {
+  String json = &quot;{\&quot;marche\&quot;:&quot;; json += enMarche ? &quot;true&quot; : &quot;false&quot;;
+  json += &quot;,\&quot;cycles\&quot;:&quot; + String(cycles) + &quot;,\&quot;cyclesTotal\&quot;:&quot; + String(cyclesTotal);
+  json += &quot;,\&quot;effort\&quot;:&quot; + String(effort) + &quot;,\&quot;niveau\&quot;:&quot; + String(niveau);
+  json += &quot;,\&quot;temperature\&quot;:&quot; + (isnan(temperature) ? String(&quot;null&quot;) : String(temperature, 1));
+  json += &quot;,\&quot;humidite\&quot;:&quot; + (isnan(humidite) ? String(&quot;null&quot;) : String(humidite, 0));
+  json += &quot;,\&quot;etat\&quot;:\&quot;&quot;; json += NOM_ETAT[etat]; json += &quot;\&quot;}&quot;;
+  server.send(200, &quot;application/json&quot;, json);
+}
+ 
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_VERTE, OUTPUT);
+  pinMode(LED_ORANGE, OUTPUT);
+  pinMode(LED_ROUGE, OUTPUT);
+  pinMode(BTN_MARCHE, INPUT_PULLUP);
+  pinMode(BTN_ENTRETIEN, INPUT_PULLUP);
+  pinMode(PIN_TRIG, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
+ 
+  bras.setPeriodHertz(50);                 // servomoteur : signal à 50 Hz
+  bras.attach(PIN_SERVO, 500, 2400);
+  bras.write(0);                           // bras en position basse
+ 
+  dht.begin();
+ 
+  WiFi.begin(ssid, password);
+  Serial.print(&quot;Connexion au Wi-Fi&quot;);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(&quot;.&quot;);
+  }
+  Serial.println();
+  Serial.print(&quot;Adresse IP : &quot;);
+  Serial.println(WiFi.localIP());
+ 
+  server.on(&quot;/&quot;, handleRoot);
+  server.on(&quot;/data&quot;, handleData);
+  server.begin();
+}
+ 
+void loop() {
+  server.handleClient();
+  lireBoutons();
+ 
+  // Mesures rapides toutes les 200 ms : effort et niveau
+  if (millis() - tMesure &gt;= 200) {
+    tMesure = millis();
+    effort = map(analogRead(PIN_POT), 0, 4095, 0, 100);
+    float d = mesurerDistance();
+    if (d &gt; 0) {
+      distance = d;
+      niveau = constrain((int)((DIST_VIDE - d) / (DIST_VIDE - DIST_PLEIN) * 100), 0, 100);
+    }
+    evaluer();
+  }
+ 
+  // Température et humidité toutes les 2 s (le DHT11 est lent)
+  if (millis() - tDht &gt;= 2000) {
+    tDht = millis();
+    float t = dht.readTemperature();
+    float h = dht.readHumidity();
+    if (!isnan(t)) temperature = t;
+    if (!isnan(h)) humidite = h;
+    Serial.print(&quot;Etat:&quot;); Serial.print(etat);
+    Serial.print(&quot; Cycles:&quot;); Serial.print(cycles);
+    Serial.print(&quot; Effort:&quot;); Serial.print(effort);
+    Serial.print(&quot; Niveau:&quot;); Serial.print(niveau);
+    Serial.print(&quot; Temperature:&quot;); Serial.print(temperature);
+    Serial.print(&quot; Humidite:&quot;); Serial.println(humidite);
+  }
+ 
+  // Le bras fait un cycle (monter puis descendre) toutes les 1,5 s quand la machine est en marche
+  if (enMarche &amp;&amp; millis() - tServo &gt;= 750) {
+    tServo = millis();
+    brasLeve = !brasLeve;
+    bras.write(brasLeve ? 90 : 0);
+    if (!brasLeve) {                       // retour en bas = un cycle terminé
+      cycles++;
+      cyclesTotal++;
+    }
+  }
+}</code></pre>
+<p class="pel"><em>Couleurs de l&#x27;Arduino IDE : orange = fonctions d&#x27;Arduino et des bibliothèques, bleu-vert = types et constantes, vert olive = structure du programme, gris = commentaires. Les noms en noir sont choisis par le programmeur.</em></p>
+</section>
+<footer>Céline Dobigeon — IUT, Université de Bordeaux · <a href="../index.html">Retour à l'accueil</a></footer>
+</div>
+</body>
+</html>

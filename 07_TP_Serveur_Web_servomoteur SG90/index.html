@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TP – Piloter un servomoteur SG90 avec un potentiomètre et une page web — Internet des objets (IoT)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fiche.css">
+</head>
+<body>
+<div class="crumb"><div class="in">
+  <a href="../index.html"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="18" width="22" height="22" rx="3"/><path d="M18 13a9 9 0 0 1 12 0"/><path d="M14 8a15 15 0 0 1 20 0"/><path d="M19 40v4M29 40v4M8 25h5M8 33h5M35 25h5M35 33h5"/></svg>Internet des objets (IoT)</a><span class="sep">/</span>
+  <a href="../index.html#tp">Travaux pratiques</a><span class="sep">/</span>
+  <b>TP servomoteur SG90</b>
+</div></div>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Travaux pratiques — IoT · 07</p>
+  <h1>TP – Piloter un servomoteur SG90 avec un potentiomètre et une page web</h1>
+  <p class="lede">Piloter un servomoteur SG90 avec un potentiomètre : vos programmes dans l&#x27;Arduino IDE, puis le serveur web créé avec le générateur de tableau de bord, où le servomoteur suit la molette ou se commande depuis la page.</p>
+  <div class="meta"><span class="tag">SG90</span><span class="tag">Potentiomètre</span><span class="tag">PWM</span><span class="tag">Serveur web</span></div>
+</header>
+<nav class="serie" aria-label="Les TP"><a href="../03_TP_Intro_ESP32/index.html"><b>TP 03</b>TP Intro ESP32</a><a href="../04_TP_Serveur_Web_LED/index.html"><b>TP 04</b>TP serveur web LED</a><a href="../05_TP_Serveur_Web_DHT11/index.html"><b>TP 05</b>TP serveur web DHT11</a><a href="../06_TP_Serveur_Web_capteur%20HCSR04/index.html"><b>TP 06</b>TP capteur HC-SR04</a><span class="ici"><b>TP 07</b>TP servomoteur SG90</span></nav>
+
+<section><h2>1. Objectifs</h2>
+<ul><li>Lire une valeur analogique (un potentiomètre) avec l&#x27;ESP32 et la convertir en tension.</li><li>Comprendre comment on commande la position d&#x27;un servomoteur avec un signal PWM.</li><li>Écrire et tester vos programmes dans l&#x27;Arduino IDE : lire le potentiomètre, faire tourner le servomoteur, puis le piloter avec le potentiomètre.</li><li>Créer le serveur web avec le générateur de tableau de bord : suivre le potentiomètre et l&#x27;angle, puis commander le servomoteur depuis un téléphone.</li><li>Exploiter les mesures dans un tableur pour trouver la loi qui relie la tension et l&#x27;angle.</li></ul>
+<div class="note "><p class="nt">Ce qui vous est fourni</p><ul><li>Le générateur de tableau de bord (<a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a>, ou en ligne : <a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a>) : c&#x27;est avec lui que vous créerez le programme du serveur web.</li><li>Les schémas de câblage et le schéma électrique de cette fiche.</li></ul><p>Votre travail : le câblage, vos trois programmes, la création du serveur web avec le générateur, les tests, l&#x27;exploitation des mesures et les questions.</p></div>
+</section>
+<section><h2>2. Matériel</h2>
+<div class="tbl"><table><tr><th><p><b>Matériel</b></p></th><th><p><b>Remarque</b></p></th></tr><tr><td><p>1 carte DOIT ESP32 DEVKIT V1 + câble micro-USB</p></td><td><p>Le câble doit permettre le transfert de données (pas seulement la charge)</p></td></tr><tr><td><p>1 potentiomètre rotatif (3 broches)</p></td><td><p>Une résistance variable réglée avec une molette</p></td></tr><tr><td><p>1 servomoteur SG90</p></td><td><p>3 fils : marron (GND), rouge (+), orange (signal)</p></td></tr><tr><td><p>1 plaque d&#x27;essai + fils mâle-femelle et mâle-mâle</p></td><td><p>Côté femelle : sur les broches de la carte ; côté mâle : dans la plaque d&#x27;essai</p></td></tr><tr><td><p>1 ordinateur avec l&#x27;Arduino IDE</p></td><td><p>Les cartes ESP32 sont déjà installées ; la bibliothèque ESP32Servo est installée à la partie 6</p></td></tr><tr><td><p>1 smartphone (ou l&#x27;ordinateur) avec un navigateur web</p></td><td><p>Connecté au même réseau Wi-Fi que la carte</p></td></tr><tr><td><p>Un tableur (Excel ou LibreOffice Calc)</p></td><td><p>Pour exploiter le fichier CSV des mesures</p></td></tr></table></div>
+</section>
+<section><h2>3. Le potentiomètre</h2>
+<p>Un potentiomètre est une résistance variable : une molette fait varier sa valeur. Il a en général trois broches.</p>
+<figure><img src="img/figure_01.jpeg" alt="" loading="lazy" style="max-width:302px"></figure>
+<p>Figure 1 – Schéma d&#x27;un potentiomètre rotatif</p>
+<p>Les broches extérieures se branchent sur l&#x27;alimentation (3,3 V) et sur la masse ; la broche centrale, le curseur, donne une tension entre 0 et 3,3 V selon la position de la molette. Elle se branche sur une entrée analogique de la carte (ici D34).</p>
+<div class="note "><p class="nt">Lire une tension avec l&#x27;ESP32</p><p><code>analogRead(broche)</code> convertit la tension de la broche en un nombre : c&#x27;est le convertisseur analogique-numérique (CAN) de la carte.</p><p>Sur l&#x27;ESP32, il travaille sur <b>12 bits</b> : 0 pour 0 V, 4095 pour 3,3 V.</p><p>Tension (V) = valeur lue × 3,3 / 4095</p></div>
+</section>
+<section><h2>4. Le servomoteur SG90</h2>
+<p>Les servomoteurs, souvent appelés « servos », se placent à une position angulaire précise et la gardent jusqu&#x27;à une nouvelle consigne. Le SG90 a un couple de 1,5 kg·cm pour seulement 9 g.</p>
+<figure><img src="img/figure_02.jpeg" alt="" loading="lazy" style="max-width:377px"></figure>
+<p>Figure 2 – Le servomoteur SG90 et ses éléments</p>
+<div class="tbl"><table><tr><th><p><b>Caractéristique</b></p></th><th><p><b>Valeur</b></p></th></tr><tr><td><p>Tension d&#x27;alimentation</p></td><td><p>4,8 V conseillés (il tourne aussi en 3,3 V, plus lentement)</p></td></tr><tr><td><p>Couple</p></td><td><p>1,6 kg·cm sous 4,8 V</p></td></tr><tr><td><p>Vitesse</p></td><td><p>0,1 s pour 60° sous 4,8 V</p></td></tr><tr><td><p>Angle de rotation</p></td><td><p>de 0° à 180°</p></td></tr><tr><td><p>Masse</p></td><td><p>9 g</p></td></tr><tr><td><p>Dimensions</p></td><td><p>23 mm × 12,2 mm × 29 mm</p></td></tr><tr><td><p>Connectique</p></td><td><p>connecteur 3 fils : marron (GND), rouge (+), orange (signal)</p></td></tr></table></div>
+<h3>Fonctionnement</h3>
+<p>Contrairement à un moteur classique, un servomoteur de base ne tourne qu&#x27;entre 0° et 180°. Il contient un moteur à courant continu, des engrenages qui augmentent le couple (et réduisent la vitesse), un potentiomètre qui mesure la position, et une électronique d&#x27;asservissement.</p>
+<p>On le commande avec un signal modulé en largeur d&#x27;impulsion (PWM) à 50 Hz : une impulsion toutes les 20 ms. La durée de l&#x27;impulsion fixe l&#x27;angle : environ 1 ms pour 0°, 1,5 ms pour 90° et 2 ms pour 180°. La bibliothèque ESP32Servo fabrique ce signal pour vous.</p>
+<figure><img src="img/figure_03.png" alt="" loading="lazy" style="max-width:340px"></figure>
+<p>Figure 3 – La durée de l&#x27;impulsion fixe l&#x27;angle du servomoteur</p>
+</section>
+<section><h2>5. Le câblage</h2>
+<div class="note amber"><p class="nt">Rappels</p><ul><li>Le potentiomètre et le servomoteur sont alimentés en 3,3 V par les lignes rouge (+) et bleue (–) du bas.</li><li>Le curseur du potentiomètre (patte du milieu) va sur D34 ; le fil orange du servomoteur va sur D22.</li><li>Si le servomoteur tremble ou manque de force, alimentez-le en 5 V : son fil rouge sur la broche VIN de la carte.</li><li>Réalisez tout le câblage carte débranchée.</li></ul></div>
+<h3>Schéma de câblage</h3>
+<figure><img src="img/figure_04.png" alt="" loading="lazy" style="max-width:623px"></figure>
+<p>Figure 4 – Câblage du potentiomètre et du servomoteur (les numéros correspondent à la légende)</p>
+<h3>Schéma électrique</h3>
+<figure><img src="img/figure_05.png" alt="" loading="lazy" style="max-width:623px"></figure>
+<p>Figure 5 – Schéma électrique : le potentiomètre en diviseur de tension, et le servomoteur</p>
+<h3>Étapes</h3>
+<ol><li><b>Potentiomètre</b> : pattes dans les trous a14, a15, a16 (curseur au milieu, en a15).</li><li><b>Fil noir</b> : du trou e14 à la ligne bleue (–) du bas.</li><li><b>Fil rouge</b> : du trou e16 à la ligne rouge (+) du bas.</li><li><b>Fil jaune</b> : du trou e15 (curseur) à la broche <b>D34</b> de la carte.</li><li><b>Servomoteur</b> : fil marron sur la ligne bleue (–), fil rouge sur la ligne rouge (+).</li><li><b>Servomoteur</b> : fil orange (signal) sur la broche <b>D22</b> de la carte.</li><li><b>Fil noir</b> : de la broche <b>GND</b> de la carte (côté droit) à la ligne bleue (–) du bas.</li><li><b>Fil rouge</b> : de la broche <b>3V3</b> de la carte à la ligne rouge (+) du bas.</li></ol>
+<p><b>Faites vérifier votre câblage par l&#x27;enseignant avant de brancher la carte.</b></p>
+<ul class="check"><li>Câblage vérifié</li></ul>
+</section>
+<section><h2>6. Vos programmes dans l&#x27;Arduino IDE</h2>
+<p>Avant de créer le serveur web, vérifiez le câblage et le fonctionnement de chaque composant avec des programmes que vous écrivez vous-même.</p>
+<h3>Lire le potentiomètre</h3>
+<ol><li>Branchez la carte. Créez un nouveau croquis, <code>Lire_Potentiometre</code>, et choisissez la carte (<code>Outils &gt; Carte &gt; esp32 &gt; DOIT ESP32 DEVKIT V1</code>) et le port (<code>Outils &gt; Port</code>).</li><li>Écrivez le programme : toutes les 0,5 s, la carte lit le potentiomètre et affiche la valeur dans le moniteur série. Aide : <code>analogRead(34)</code> renvoie la valeur lue.</li><li>Téléversez, ouvrez le <code>Moniteur série</code> à 115200 bauds et tournez la molette d&#x27;un bout à l&#x27;autre : relevez la valeur minimale et la valeur maximale.</li><li>Complétez le programme : calculez et affichez aussi la tension du curseur, avec la formule de la partie 3.</li></ol>
+<ul class="check"><li>La valeur change quand on tourne la molette</li><li>La tension affichée va de 0 à 3,3 V environ</li></ul>
+<p>Notez sur votre feuille les valeurs minimale et maximale lues.</p>
+<h3>Faire tourner le servomoteur</h3>
+<ol><li>Installez la bibliothèque du servomoteur : <code>Outils &gt; Gérer les bibliothèques…</code>, cherchez <b>ESP32Servo</b> (auteur : Kevin Harrington), puis cliquez sur Installer.</li><li>Créez un nouveau croquis, <code>Balayage_Servo</code>. Écrivez un programme qui fait tourner le servomoteur de 0° à 180°, degré par degré, puis revient à 0°, sans s&#x27;arrêter. Aide : <code>#include &lt;ESP32Servo.h&gt;</code> en haut du programme ; <code>Servo sg90;</code> déclare le servomoteur ; dans <code>setup()</code>, <code>sg90.setPeriodHertz(50);</code> puis <code>sg90.attach(22, 500, 2400);</code> (impulsion de 0,5 ms pour 0° à 2,4 ms pour 180°) ; <code>sg90.write(angle)</code> le place à un angle ; une boucle <code>for</code> et <code>delay(10)</code> font le balayage.</li><li>Téléversez et observez le servomoteur.</li></ol>
+<ul class="check"><li>Le servomoteur balaie de 0° à 180°, puis revient</li></ul>
+<h3>Piloter le servomoteur avec le potentiomètre</h3>
+<ol><li>Créez un nouveau croquis, <code>Servo_Potentiometre</code>. Écrivez un programme qui place le servomoteur à un angle proportionnel à la position de la molette : 0° quand le potentiomètre est au minimum, 180° au maximum. Aide : angle = valeur lue × 180 / 4095, ou <code>map(valeur, 0, 4095, 0, 180)</code>.</li><li>Affichez la valeur lue, la tension et l&#x27;angle dans le moniteur série.</li><li>Téléversez et tournez la molette.</li></ol>
+<ul class="check"><li>Le servomoteur suit la molette</li></ul>
+</section>
+<section><h2>7. Créer le serveur web avec le générateur de tableau de bord</h2>
+<p>Le programme du serveur web, vous le créez sans le programmer, avec le générateur de tableau de bord. Il sait lire le potentiomètre et faire suivre le servomoteur, ou commander le servomoteur depuis la page.</p>
+<ol><li>Ouvrez le générateur (<code><a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a></code>, ou <code><a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a></code>) et choisissez <b>« Page vide »</b>.</li><li><b>Ma carte</b> : saisissez le Wi-Fi. Ajoutez une <b>Entrée analogique</b> nommée « Potentiomètre », sur <b>D34</b>, avec une valeur affichée de 0 à 0 V et de 3,3 à 3,3 V, unité « V », 2 décimales. Choisissez une mesure <b>toutes les 1 s</b>.</li><li>Ajoutez un <b>Servomoteur SG90</b> sur <b>D22</b>, avec la commande <b>« Suit une entrée analogique »</b> et l&#x27;entrée « Potentiomètre ».</li><li><b>Apparence</b> : choisissez le rechargement automatique <b>toutes les 2 s</b>.</li><li><b>Blocs</b> : ajoutez un titre, une forme pour la tension du potentiomètre, un <b>cadran</b> pour l&#x27;angle du servomoteur, les <b>courbes</b> de la tension et de l&#x27;angle, et le <b>téléchargement CSV</b>.</li><li>Testez dans l&#x27;aperçu : bougez le curseur du potentiomètre et regardez l&#x27;angle.</li><li>Cliquez sur <b>Télécharger le programme</b>, ouvrez le fichier <code>.ino</code> dans l&#x27;Arduino IDE et téléversez-le. Si le téléchargement ne démarre pas, utilisez « Copier le programme » et collez-le dans un nouveau croquis.</li><li>Ouvrez le <code>Moniteur série</code> (115200 bauds) et appuyez sur le bouton EN : l&#x27;adresse IP s&#x27;affiche.</li></ol>
+<p>Notez sur votre feuille l&#x27;adresse IP de votre carte (par exemple 192.168.1.42) : vous en aurez besoin pour ouvrir la page.</p>
+<p><b>Variante : commander le servomoteur depuis le téléphone</b></p>
+<ol><li>Dans le générateur, passez la commande du servomoteur sur <b>« Depuis le tableau de bord (boutons d&#x27;angle) »</b>.</li><li>Ajoutez un bloc <b>« Commande d&#x27;angle »</b> : des boutons 0°, 45°, 90°, 135°, 180°, et – / + 10°.</li><li>Téléchargez le nouveau programme, téléversez-le, et commandez le servomoteur depuis la page.</li></ol>
+</section>
+<section><h2>8. Tester</h2>
+<ol><li>Connectez le téléphone (ou l&#x27;ordinateur) au même réseau Wi-Fi que la carte.</li><li>Dans le navigateur, tapez http:// suivi de l&#x27;adresse IP de la carte (par exemple http://192.168.1.42).</li><li>Tournez la molette : observez le servomoteur, la page et les courbes.</li><li>Avec la variante, appuyez sur les boutons d&#x27;angle et regardez la barre d&#x27;adresse du navigateur.</li></ol>
+<ul class="check"><li>L&#x27;angle affiché suit la molette, et le servomoteur aussi</li><li>Avec la variante, les boutons de la page font tourner le servomoteur</li></ul>
+</section>
+<section><h2>9. Exploiter les mesures</h2>
+<ol><li>Avec la première version du serveur web (le servomoteur suit le potentiomètre), tournez lentement la molette d&#x27;un bout à l&#x27;autre pendant une minute.</li><li>Téléchargez le fichier CSV depuis la page et ouvrez-le dans le tableur.</li><li>Tracez un graphique de l&#x27;angle du servomoteur en fonction de la tension du potentiomètre.</li><li>Ajoutez une courbe de tendance linéaire et notez son équation : c&#x27;est la loi qui relie la tension et l&#x27;angle. Comparez avec la loi attendue.</li></ol>
+<ul class="check"><li>Le graphique et la loi sont obtenus</li></ul>
+</section>
+<section class="questions"><h2>10. Questions de compréhension</h2>
+<ol><li>Pourquoi analogRead() renvoie-t-il un nombre entre 0 et 4095 ? Quelle tension correspond à une valeur lue de 2048 ?</li><li>Quelle valeur lit-on quand le curseur est à 1,65 V ? Quel angle prend alors le servomoteur ?</li><li>Quelle est la durée de l&#x27;impulsion pour un angle de 90°, avec sg90.attach(22, 500, 2400) ? Et avec la figure 3 ?</li><li>Dans le programme du serveur web, qui fait tourner le servomoteur quand on tourne la molette : la page ou la carte ? Faut-il que la page soit ouverte ?</li><li>Avec la variante, vous appuyez sur « 90° » : quelle adresse le navigateur demande-t-il ? Quelle fonction du programme est exécutée, et que fait-elle ?</li><li>Le potentiomètre est branché sur D34. Pourquoi ne pas le brancher sur D25 quand la carte utilise le Wi-Fi ?</li><li>Le servomoteur tremble parfois en 3,3 V. Expliquez pourquoi l&#x27;alimenter en 5 V améliore son fonctionnement.</li></ol>
+</section>
+<section><h2>11. Pour aller plus loin</h2>
+<h3>A. Limiter la course du servomoteur</h3>
+<ul><li>Dans votre programme de la partie 6, limitez l&#x27;angle entre 20° et 160°, avec <code>map()</code> puis <code>constrain()</code>.</li><li>Expliquez dans quel cas cette limite protège une machine (butée mécanique, pièce fragile…).</li></ul>
+<h3>B. Commander l&#x27;angle depuis le moniteur série</h3>
+<ul><li>Modifiez votre programme : la carte lit un angle tapé dans le moniteur série et y place le servomoteur. Aide : <code>Serial.parseInt()</code> lit un nombre entier.</li><li>Refusez les angles hors de 0° à 180°, avec un message dans le moniteur série.</li></ul>
+</section>
+<section><h2>12. En cas de problème</h2>
+<div class="tbl"><table><tr><th><p><b>Problème</b></p></th><th><p><b>Solution</b></p></th></tr><tr><td><p>La carte n&#x27;apparaît pas dans Outils &gt; Port</p></td><td><p>Vérifier le câble micro-USB (données), installer le pilote USB (CP210x), changer de port USB.</p></td></tr><tr><td><p>Le téléversement bloque sur « Connecting… »</p></td><td><p>Maintenir le bouton BOOT enfoncé au début du téléversement.</p></td></tr><tr><td><p>Erreur de compilation « ESP32Servo.h: No such file or directory »</p></td><td><p>La bibliothèque ESP32Servo n&#x27;est pas installée : refaire l&#x27;étape 1 de « Faire tourner le servomoteur » (partie 6).</p></td></tr><tr><td><p>La valeur lue reste à 0 ou à 4095</p></td><td><p>Vérifier le curseur (patte du milieu) sur D34 et les deux autres pattes sur 3,3 V et GND.</p></td></tr><tr><td><p>Le servomoteur ne bouge pas</p></td><td><p>Vérifier le fil orange sur D22, la masse commune (fil marron et GND de la carte sur la ligne bleue) et l&#x27;alimentation (fil rouge).</p></td></tr><tr><td><p>Le servomoteur tremble ou force</p></td><td><p>Alimenter le servomoteur en 5 V (fil rouge sur VIN) ; ne pas bloquer le palonnier à la main.</p></td></tr><tr><td><p>Des points s&#x27;affichent sans fin dans le moniteur série</p></td><td><p>La carte ne trouve pas le réseau Wi-Fi : vérifier le nom et le mot de passe saisis dans le générateur, puis prévenir l&#x27;enseignant.</p></td></tr><tr><td><p>La page ne s&#x27;ouvre pas</p></td><td><p>Vérifier que le téléphone est sur le même Wi-Fi et que l&#x27;adresse commence par http:// (et non https://).</p></td></tr></table></div>
+</section>
+<footer>Céline Dobigeon — IUT, Université de Bordeaux · <a href="../index.html">Retour à l'accueil</a></footer>
+</div>
+</body>
+</html>

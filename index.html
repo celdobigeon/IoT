@@ -1,188 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ressources IoT</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Internet des objets (IoT)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 <style>
-:root{
-  --bg:#EDF1F4; --surface:#FFFFFF; --ink:#14283B; --muted:#586A7B; --line:#C8D2DB;
-  --copper:#B5652D; --link:#1F4E9E;
-  --t-fiche:#1F4E9E; --t-fiche-bg:#E3EBFA;
-  --t-anim:#12845A; --t-anim-bg:#DDF2E8;
-  --t-prog:#6A3FA0; --t-prog-bg:#ECE4F7;
-  --t-img:#8A6212; --t-img-bg:#F7EDD5;
-  --t-doc:#4D6478; --t-doc-bg:#E6ECF1;
-  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
-  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
-  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    color-scheme:dark;
-    --bg:#0E1822; --surface:#152230; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
-    --copper:#DB8C50; --link:#8CB0FF;
-    --t-fiche:#8CB0FF; --t-fiche-bg:#1C2C4A;
-    --t-anim:#5ED3A0; --t-anim-bg:#163A2B;
-    --t-prog:#C3A2F0; --t-prog-bg:#2C2240;
-    --t-img:#E3BD62; --t-img-bg:#3A2F17;
-    --t-doc:#A9BCCB; --t-doc-bg:#23323F;
-  }
-}
-:root[data-theme="dark"]{
-  color-scheme:dark;
-  --bg:#0E1822; --surface:#152230; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
-  --copper:#DB8C50; --link:#8CB0FF;
-  --t-fiche:#8CB0FF; --t-fiche-bg:#1C2C4A;
-  --t-anim:#5ED3A0; --t-anim-bg:#163A2B;
-  --t-prog:#C3A2F0; --t-prog-bg:#2C2240;
-  --t-img:#E3BD62; --t-img-bg:#3A2F17;
-  --t-doc:#A9BCCB; --t-doc-bg:#23323F;
-}
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
-.wrap{max-width:1000px;margin:0 auto;padding:32px 20px 56px;display:grid;gap:22px}
-header{display:grid;gap:8px}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper)}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.5vw,44px);line-height:1.05;margin:0;text-wrap:balance}
-.intro{margin:0;max-width:72ch;color:var(--muted)}
-nav.toc{display:flex;flex-wrap:wrap;gap:8px}
-nav.toc a{font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 12px}
-nav.toc a:hover{border-color:var(--copper)}
-a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:4px}
-section.theme{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:grid;gap:12px;scroll-margin-top:16px}
-.th-head{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
-.num{font-family:var(--mono);font-size:14px;color:var(--copper);font-weight:500}
-.th-head h2{font-family:var(--display);font-weight:600;font-size:24px;margin:0;text-wrap:balance}
-.desc{margin:0;color:var(--muted);max-width:80ch}
-ul.files{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-ul.files li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line)}
-ul.files li:first-child{border-top:none}
-@media (max-width:600px){ul.files li{grid-template-columns:86px minmax(0,1fr)}}
-ul.files a{color:var(--link);text-decoration:none;font-weight:500;word-break:break-word}
-ul.files a:hover{text-decoration:underline}
-ul.files .what{display:block;font-size:13.5px;color:var(--muted);font-weight:400}
-.tag{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:99px;text-align:center;white-space:nowrap;justify-self:start}
-.fiche{color:var(--t-fiche);background:var(--t-fiche-bg)}
-.anim{color:var(--t-anim);background:var(--t-anim-bg)}
-.prog{color:var(--t-prog);background:var(--t-prog-bg)}
-.img{color:var(--t-img);background:var(--t-img-bg)}
-.doc{color:var(--t-doc);background:var(--t-doc-bg)}
-footer{font-size:12.5px;color:var(--muted)}
-a.dl{display:inline-block;margin-left:10px;font-size:13px;font-weight:500;color:var(--copper);border:1px solid var(--copper);border-radius:99px;padding:1px 10px;text-decoration:none}
-a.dl:hover{background:var(--copper);color:var(--surface)}
-.demarche{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
-.demarche h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0}
-.demarche ol{margin:0;padding-left:22px;display:grid;gap:5px;max-width:80ch}
-.demarche p{margin:0;font-size:13.5px;color:var(--muted);max-width:80ch}
+.onde{animation:onde 2.4s ease-out infinite;opacity:0}
+.o2{animation-delay:.3s}.o3{animation-delay:.6s}
+@keyframes onde{0%{opacity:0}30%{opacity:.9}100%{opacity:0}}
+.paquet{offset-path:path("M210 198 C 250 170, 290 170, 330 196");animation:paquet 2.4s ease-in-out infinite}
+@keyframes paquet{0%{offset-distance:0%;opacity:0}15%{opacity:1}85%{opacity:1}100%{offset-distance:100%;opacity:0}}
+.led,.led-ph{animation:clign 2.4s steps(1) infinite}
+.led-halo{animation:clign 2.4s steps(1) infinite}
+@keyframes clign{0%,49%{opacity:1}50%,100%{opacity:.18}}
+.jauge{stroke-dasharray:62 100;animation:jauge 4.8s ease-in-out infinite alternate}
+@keyframes jauge{from{stroke-dasharray:35 100}to{stroke-dasharray:80 100}}
+.cta{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+.cta a{text-decoration:none;font-family:Archivo,sans-serif;font-weight:600;font-size:14.5px;padding:10px 17px;border-radius:9px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.cta a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.cta a:hover{border-color:var(--muted)}
+.cta a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card .num{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--accent);font-weight:500}
 </style>
 </head>
 <body>
+<div class="top"><div class="in">
+  <a class="mark" href="index.html"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="18" width="22" height="22" rx="3"/><path d="M18 13a9 9 0 0 1 12 0"/><path d="M14 8a15 15 0 0 1 20 0"/><path d="M19 40v4M29 40v4M8 25h5M8 33h5M35 25h5M35 33h5"/></svg>Internet des objets (IoT)</a>
+  <nav><a href="#synthese">Synthèse</a><a href="#tp">Travaux pratiques</a><a href="#activite">Activité</a><a href="#outil">Outil</a></nav>
+</div></div>
 <div class="wrap">
-  <header>
-    <div class="eyebrow">Introduction à l'Internet des objets · IdO / IoT</div>
-    <h1>Ressources IoT</h1>
-    <p class="intro">Les travaux pratiques et animations du module d&#x27;introduction à l&#x27;Internet des objets. Cliquez sur un fichier pour l&#x27;ouvrir : les animations s&#x27;ouvrent dans le navigateur, les fiches Word se téléchargent.</p>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">IUT — Université de Bordeaux</p>
+      <h1>Internet des objets (IoT)</h1>
+      <p class="lede">Les travaux pratiques, la fiche de synthèse et les outils du module d&#x27;introduction à l&#x27;Internet des objets, avec la carte ESP32. Les sujets se lisent dans le navigateur ; seuls les programmes Arduino (.ino) se téléchargent.</p>
+      <div class="cta"><a class="primary" href="#tp">Travaux pratiques</a><a href="#synthese">Tout voir</a></div>
+    </div>
+    <div class="hero-art"><svg viewBox="0 0 480 360" role="img" aria-label="Carte ESP32 qui envoie ses mesures en Wi-Fi vers un téléphone.">
+  <defs>
+    <pattern id="grille" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="currentColor" stroke-width="1" opacity=".07"/></pattern>
+    <linearGradient id="fond" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--surface)"/><stop offset="1" stop-color="var(--surface-2)"/></linearGradient>
+  </defs>
+  <rect x="8" y="8" width="464" height="344" rx="16" fill="url(#fond)"/>
+  <rect x="8" y="8" width="464" height="344" rx="16" fill="url(#grille)" color="var(--muted)"/>
+  <rect x="8" y="8" width="464" height="344" rx="16" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+  <!-- carte ESP32 -->
+  <g transform="translate(70 120)">
+    <rect width="130" height="170" rx="9" fill="var(--ink)"/>
+    <rect x="28" y="16" width="74" height="62" rx="3" fill="var(--metal)"/>
+    <path d="M36 16v-10h6v8h6v-8h6v8h6v-8h6v8h6v-8h6v10" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="65" y="52" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="500" fill="var(--ink)">ESP32</text>
+    <g fill="var(--accent)" opacity=".85">
+      <circle cx="10" cy="40" r="2.5"/><circle cx="10" cy="62" r="2.5"/><circle cx="10" cy="84" r="2.5"/><circle cx="10" cy="106" r="2.5"/><circle cx="10" cy="128" r="2.5"/><circle cx="10" cy="150" r="2.5"/>
+      <circle cx="120" cy="40" r="2.5"/><circle cx="120" cy="62" r="2.5"/><circle cx="120" cy="84" r="2.5"/><circle cx="120" cy="106" r="2.5"/><circle cx="120" cy="128" r="2.5"/><circle cx="120" cy="150" r="2.5"/>
+    </g>
+    <circle class="led" cx="44" cy="118" r="9" fill="var(--red)"/>
+    <circle class="led-halo" cx="44" cy="118" r="18" fill="var(--red)" opacity=".2"/>
+    <rect x="60" y="106" width="44" height="24" rx="4" fill="none" stroke="var(--metal)" stroke-width="2"/>
+    <text x="82" y="122" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--metal)">22,4 °C</text>
+  </g>
+  <!-- ondes Wi-Fi -->
+  <g fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round">
+    <path class="onde o1" d="M222 178a20 20 0 0 1 0 40"/>
+    <path class="onde o2" d="M236 162a42 42 0 0 1 0 72"/>
+    <path class="onde o3" d="M250 146a64 64 0 0 1 0 104"/>
+  </g>
+  <circle class="paquet" r="6" fill="var(--green)"/>
+  <!-- téléphone -->
+  <g transform="translate(318 96)">
+    <rect width="104" height="190" rx="16" fill="var(--surface)" stroke="var(--ink)" stroke-width="3"/>
+    <rect x="10" y="22" width="84" height="146" rx="4" fill="var(--surface-2)"/>
+    <text x="52" y="44" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10" font-weight="600" fill="var(--ink)">Tableau de bord</text>
+    <path d="M24 112a28 28 0 0 1 56 0" fill="none" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>
+    <path class="jauge" d="M24 112a28 28 0 0 1 56 0" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" pathLength="100"/>
+    <text x="52" y="108" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">22,4</text>
+    <polyline points="20,150 34,142 46,146 58,134 70,138 84,128" fill="none" stroke="var(--blue)" stroke-width="2"/>
+    <circle class="led-ph" cx="52" cy="66" r="8" fill="var(--red)"/>
+  </g>
+  <text x="270" y="318" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--blue)" opacity=".8">Wi-Fi · HTTP</text>
+</svg></div>
   </header>
 
-  <nav class="toc" aria-label="Thèmes">
-    <a href="#t02">02 · Synthèse maintenance</a>
-    <a href="#t03">03 · TP Intro ESP32</a>
-    <a href="#t04">04 · TP serveur web LED</a>
-    <a href="#t05">05 · TP serveur web DHT11</a>
-    <a href="#t06">06 · TP capteur HC-SR04</a>
-    <a href="#t07">07 · TP servomoteur SG90</a>
-    <a href="#t08">08 · Activité maintenance</a>
-    <a href="#t09">09 · Générateur de tableau de bord</a>
-  </nav>
-
-  <section class="theme" id="t02">
-    <div class="th-head"><span class="num">02</span><h2>Fiche de synthèse : IoT et maintenance préventive</h2></div>
-    <p class="desc">Types de maintenance, grandeurs à surveiller, architecture d&#x27;une solution IoT, indicateurs (MTBF, MTTR, disponibilité).</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="02_Fiche_synthese_Maintenance_IoT/IoT_Maintenance_Preventive_Synthese.docx">IoT_Maintenance_Preventive_Synthese.docx</a><span class="what">La fiche de synthèse</span></span></li>
-    </ul>
+  <section id="synthese">
+    <div class="sec-hd"><h2>Fiche de synthèse</h2><span class="n">1 ressource</span></div>
+    <div class="grid">
+      <a class="card" href="02_Fiche_synthese_Maintenance_IoT/index.html">
+        <span class="num">02</span>
+        <h3>Fiche de synthèse : IoT et maintenance préventive</h3>
+        <p>Types de maintenance, grandeurs à surveiller, architecture d&#x27;une solution IoT, indicateurs (MTBF, MTTR, disponibilité).</p>
+        <div class="tags"><span>Maintenance</span><span>Industrie 4.0</span><span>MTBF / MTTR</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+    </div>
+  </section>
+  <section id="tp">
+    <div class="sec-hd"><h2>Travaux pratiques</h2><span class="n">5 ressources</span></div>
+    <div class="grid">
+      <a class="card" href="03_TP_Intro_ESP32/index.html">
+        <span class="num">03</span>
+        <h3>TP : introduction à l&#x27;ESP32</h3>
+        <p>Découverte de la carte DOIT ESP32 DEVKIT V1, installation dans l&#x27;Arduino IDE, premier téléversement et bases du langage. À faire avant les autres TP.</p>
+        <div class="tags"><span>ESP32</span><span>Arduino IDE</span><span>Bases du langage</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+      <a class="card" href="04_TP_Serveur_Web_LED/index.html">
+        <span class="num">04</span>
+        <h3>TP : piloter une LED avec un serveur web (ESP32)</h3>
+        <p>Vous câblez la LED, écrivez et testez votre propre programme dans l&#x27;Arduino IDE, découvrez le tableau de bord du TP dans le générateur, puis téléversez le programme du serveur web : un appui sur le voyant de la page allume ou éteint la LED.</p>
+        <div class="tags"><span>ESP32</span><span>LED</span><span>Serveur web</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+      <a class="card" href="05_TP_Serveur_Web_DHT11/index.html">
+        <span class="num">05</span>
+        <h3>TP : afficher la température et l&#x27;humidité avec un serveur web (DHT11)</h3>
+        <p>Vous écrivez votre programme de mesure dans l&#x27;Arduino IDE, puis créez le serveur web avec le générateur : jauges, courbes des 30 dernières minutes et historique téléchargeable en CSV.</p>
+        <div class="tags"><span>DHT11</span><span>Serveur web</span><span>Fichier CSV</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+      <a class="card" href="06_TP_Serveur_Web_capteur%20HCSR04/index.html">
+        <span class="num">06</span>
+        <h3>TP : mesurer une distance avec le capteur ultrason HC-SR04</h3>
+        <p>Mesurer une distance avec le capteur HC-SR04 : votre programme de mesure dans l&#x27;Arduino IDE, un espace de travail de robot à trois LED, puis le serveur web créé avec le générateur de tableau de bord, et l&#x27;étude de l&#x27;erreur de mesure.</p>
+        <div class="tags"><span>HC-SR04</span><span>Ultrasons</span><span>Serveur web</span><span>Tableur</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+      <a class="card" href="07_TP_Serveur_Web_servomoteur%20SG90/index.html">
+        <span class="num">07</span>
+        <h3>TP : piloter un servomoteur SG90</h3>
+        <p>Piloter un servomoteur SG90 avec un potentiomètre : vos programmes dans l&#x27;Arduino IDE, puis le serveur web créé avec le générateur de tableau de bord, où le servomoteur suit la molette ou se commande depuis la page.</p>
+        <div class="tags"><span>SG90</span><span>Potentiomètre</span><span>PWM</span><span>Serveur web</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+    </div>
+  </section>
+  <section id="activite">
+    <div class="sec-hd"><h2>Activité</h2><span class="n">1 ressource</span></div>
+    <div class="grid">
+      <a class="card" href="08_Activite_Maintenance_Machine/index.html">
+        <span class="num">08</span>
+        <h3>Activité : maintenance préventive d&#x27;une machine connectée</h3>
+        <p>Un bras motorisé surveillé par un potentiomètre, un capteur ultrason et un DHT11 : compteur de cycles, seuils d&#x27;alerte et d&#x27;alarme, arrêt automatique et page web.</p>
+        <div class="tags"><span>Maintenance</span><span>SG90</span><span>HC-SR04</span><span>DHT11</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+    </div>
+  </section>
+  <section id="outil">
+    <div class="sec-hd"><h2>Outil</h2><span class="n">1 ressource</span></div>
+    <div class="grid">
+      <a class="card" href="09_Application_Generateur_Page_Web/index.html">
+        <span class="num">09</span>
+        <h3>Application : générateur de tableau de bord pour l&#x27;ESP32</h3>
+        <p>Composez la page web servie par la carte (jauges, courbes, voyant…), testez-la en simulation et téléchargez le programme Arduino, sans rien programmer.</p>
+        <div class="tags"><span>Tableau de bord</span><span>Sans programmer</span></div>
+        <span class="go">Ouvrir <em>→</em></span>
+      </a>
+    </div>
   </section>
 
-  <section class="theme" id="t03">
-    <div class="th-head"><span class="num">03</span><h2>TP : introduction à l&#x27;ESP32</h2></div>
-    <p class="desc">Découverte de la carte DOIT ESP32 DEVKIT V1, installation dans l&#x27;Arduino IDE, premier téléversement et bases du langage. À faire avant les autres TP.</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="03_TP_Intro_ESP32/TP_Intro_ESP32.docx">TP_Intro_ESP32.docx</a><span class="what">La fiche du TP</span></span></li>
-    </ul>
-  </section>
-
-  <section class="theme" id="t04">
-    <div class="th-head"><span class="num">04</span><h2>TP : piloter une LED avec un serveur web (ESP32)</h2></div>
-    <p class="desc">Vous câblez la LED, écrivez et testez votre propre programme dans l&#x27;Arduino IDE, découvrez le tableau de bord du TP dans le générateur, puis téléversez le programme du serveur web : un appui sur le voyant de la page allume ou éteint la LED.</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="04_TP_Serveur_Web_LED/TP_ESP32_Serveur_Web_LED.docx">TP_ESP32_Serveur_Web_LED.docx</a><span class="what">Câblage, téléversement, tests et questions</span></span></li>
-      <li><span class="tag anim">animation</span><span><a href="04_TP_Serveur_Web_LED/Animation_LED_Serveur_Web.html">Animation_LED_Serveur_Web.html</a><span class="what">Requêtes HTTP entre le navigateur et la carte, Wi-Fi coupé, téléphone en 4G</span></span></li>
-      <li><span class="tag prog">programme</span><span><a href="04_TP_Serveur_Web_LED/ESP32_Serveur_Web_LED/ESP32_Serveur_Web_LED.ino">ESP32_Serveur_Web_LED.ino</a><span class="what">Le programme Arduino : saisir le Wi-Fi avant de téléverser</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="04_TP_Serveur_Web_LED/schema_cablage_ESP32_LED.png">schema_cablage_ESP32_LED.png</a><span class="what">Câblage de la LED sur la plaque d&#x27;essai</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="04_TP_Serveur_Web_LED/schema_electrique_ESP32_LED.png">schema_electrique_ESP32_LED.png</a><span class="what">Schéma électrique : D26, résistance 220 Ω, LED, GND</span></span></li>
-    </ul>
-  </section>
-
-  <section class="theme" id="t05">
-    <div class="th-head"><span class="num">05</span><h2>TP : afficher la température et l&#x27;humidité avec un serveur web (DHT11)</h2></div>
-    <p class="desc">Vous écrivez votre programme de mesure dans l&#x27;Arduino IDE, puis créez le serveur web avec le générateur : jauges, courbes des 30 dernières minutes et historique téléchargeable en CSV.</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="05_TP_Serveur_Web_DHT11/TP_ESP32_Serveur_Web_DHT11.docx">TP_ESP32_Serveur_Web_DHT11.docx</a><span class="what">Fiche technique du capteur, câblage, bibliothèque, tests, fichier CSV et questions</span></span></li>
-      <li><span class="tag anim">animation</span><span><a href="05_TP_Serveur_Web_DHT11/Animation_DHT11_Serveur_Web.html">Animation_DHT11_Serveur_Web.html</a><span class="what">Requêtes HTTP, jauges, courbes, fichier CSV, rechargement automatique, pannes</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="05_TP_Serveur_Web_DHT11/schema_cablage_ESP32_DHT11.png">schema_cablage_ESP32_DHT11.png</a><span class="what">Câblage du module DHT11 (D4, 3V3, GND)</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="05_TP_Serveur_Web_DHT11/schema_electrique_ESP32_DHT11.png">schema_electrique_ESP32_DHT11.png</a><span class="what">Schéma électrique</span></span></li>
-      <li><span class="tag prog">programme</span><span><a href="05_TP_Serveur_Web_DHT11/ESP32_Serveur_Web_DHT11/ESP32_Serveur_Web_DHT11.ino">ESP32_Serveur_Web_DHT11.ino</a><span class="what">Le programme d&#x27;origine, pour la partie « Pour aller plus loin » : saisir le Wi-Fi, installer DHT sensor library</span></span></li>
-    </ul>
-  </section>
-
-  <section class="theme" id="t06">
-    <div class="th-head"><span class="num">06</span><h2>TP : mesurer une distance avec le capteur ultrason HC-SR04</h2></div>
-    <p class="desc">Mesurer une distance avec le capteur HC-SR04 : votre programme de mesure dans l&#x27;Arduino IDE, un espace de travail de robot à trois LED, puis le serveur web créé avec le générateur de tableau de bord, et l&#x27;étude de l&#x27;erreur de mesure.</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/TP_ESP32_Serveur_Web_HCSR04.docx">TP_ESP32_Serveur_Web_HCSR04.docx</a><span class="what">La fiche du TP</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/schema_cablage_ESP32_HCSR04.png">schema_cablage_ESP32_HCSR04.png</a><span class="what">Câblage du capteur</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/schema_cablage_ESP32_HCSR04_LED.png">schema_cablage_ESP32_HCSR04_LED.png</a><span class="what">Câblage avec les trois LED</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/schema_electrique_ESP32_HCSR04.png">schema_electrique_ESP32_HCSR04.png</a><span class="what">Schéma électrique</span></span></li>
-    </ul>
-  </section>
-
-  <section class="theme" id="t07">
-    <div class="th-head"><span class="num">07</span><h2>TP : piloter un servomoteur SG90</h2></div>
-    <p class="desc">Piloter un servomoteur SG90 avec un potentiomètre : vos programmes dans l&#x27;Arduino IDE, puis le serveur web créé avec le générateur de tableau de bord, où le servomoteur suit la molette ou se commande depuis la page.</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="07_TP_Serveur_Web_servomoteur%20SG90/TP_ESP32_Serveur_Web_Servo_SG90.docx">TP_ESP32_Serveur_Web_Servo_SG90.docx</a><span class="what">La fiche du TP</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="07_TP_Serveur_Web_servomoteur%20SG90/schema_cablage_ESP32_potentiometre_SG90.png">schema_cablage_ESP32_potentiometre_SG90.png</a><span class="what">Câblage</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="07_TP_Serveur_Web_servomoteur%20SG90/schema_electrique_ESP32_potentiometre_SG90.png">schema_electrique_ESP32_potentiometre_SG90.png</a><span class="what">Schéma électrique</span></span></li>
-    </ul>
-  </section>
-
-  <section class="theme" id="t08">
-    <div class="th-head"><span class="num">08</span><h2>Activité : maintenance préventive d&#x27;une machine connectée</h2></div>
-    <p class="desc">Un bras motorisé surveillé par un potentiomètre, un capteur ultrason et un DHT11 : compteur de cycles, seuils d&#x27;alerte et d&#x27;alarme, arrêt automatique et page web.</p>
-    <ul class="files">
-      <li><span class="tag fiche">fiche</span><span><a href="08_Activite_Maintenance_Machine/Activite_Maintenance_Machine_ESP32.docx">Activite_Maintenance_Machine_ESP32.docx</a><span class="what">Câblage, programme, scénarios de test et questions</span></span></li>
-      <li><span class="tag anim">animation</span><span><a href="08_Activite_Maintenance_Machine/Animation_Maintenance_Machine.html">Animation_Maintenance_Machine.html</a><span class="what">Simulation de la machine : cycles, effort, niveau de lubrifiant, armoire électrique</span></span></li>
-      <li><span class="tag prog">programme</span><span><a href="08_Activite_Maintenance_Machine/ESP32_Maintenance_Machine/ESP32_Maintenance_Machine.ino">ESP32_Maintenance_Machine.ino</a><span class="what">Le programme Arduino : saisir le Wi-Fi, installer ESP32Servo et DHT sensor library</span></span></li>
-      <li><span class="tag img">schéma</span><span><a href="08_Activite_Maintenance_Machine/schema_cablage_maintenance_machine.png">schema_cablage_maintenance_machine.png</a><span class="what">Câblage complet de la machine pédagogique</span></span></li>
-    </ul>
-  </section>
-
-  <section class="theme" id="t09">
-    <div class="th-head"><span class="num">09</span><h2>Application : générateur de tableau de bord pour l&#x27;ESP32</h2></div>
-    <p class="desc">Composez la page web servie par la carte (jauges, courbes, voyant…), testez-la en simulation et téléchargez le programme Arduino, sans rien programmer.</p>
-    <ul class="files">
-      <li><span class="tag anim">application</span><span><a href="09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a> <a class="dl" href="09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html" download="Generateur_Page_Web_ESP32_etudiant.html">Télécharger pour travailler hors ligne</a><span class="what">Le générateur : un clic sur le nom l&#x27;ouvre dans le navigateur.</span></span></li>
-    </ul>
-    <div class="demarche"><h3>Comment l'utiliser</h3><ol><li><b>Ouvrez le générateur</b> en cliquant sur son nom, ou <b>téléchargez-le</b> pour travailler sans connexion : enregistrez le fichier, puis double-cliquez dessus, il s'ouvre dans votre navigateur.</li><li><b>Regardez l'exemple « TP LED »</b> pour comprendre le principe, puis choisissez <b>« Page vide »</b> pour créer votre propre tableau de bord.</li><li><b>Ma carte</b> : ajoutez ce qui est branché sur l'ESP32 (capteur DHT11, potentiomètre, bouton, LED…). Vérifiez que chaque broche choisie est bien celle de votre câblage, puis saisissez le nom et le mot de passe du Wi-Fi.</li><li><b>Ajoutez des blocs</b> : « Ajouter un bloc », choisissez une forme dans la galerie (jauge, thermomètre, courbe, voyant…), puis la valeur à afficher. « Changer de forme » garde la valeur et change le dessin.</li><li><b>Testez dans l'aperçu</b> : bougez les curseurs de simulation, cliquez sur le voyant ou les boutons de la page.</li><li><b>Téléchargez le programme</b> (.ino) et ouvrez-le dans l'Arduino IDE (acceptez qu'il le range dans un dossier du même nom). Si le téléchargement ne démarre pas, utilisez « Copier le programme » et collez-le dans un nouveau croquis. Choisissez la carte <b>DOIT ESP32 DEVKIT V1</b> et téléversez.</li><li><b>Ouvrez le moniteur série</b> à 115200 bauds : tapez l'adresse IP affichée dans le navigateur d'un téléphone ou d'un ordinateur connecté au même Wi-Fi.</li></ol><p>Votre travail est gardé dans le navigateur que vous utilisez. Pour le reprendre sur un autre ordinateur, cliquez sur « Enregistrer mon tableau de bord (.json) », puis, sur l'autre ordinateur, sur « Ouvrir… ».</p></div>
-  </section>
-
-  <footer>
-    <p>Programmes Arduino : saisissez le nom et le mot de passe du réseau Wi-Fi avant de téléverser, et choisissez la carte DOIT ESP32 DEVKIT V1.</p>
-  </footer>
+  <footer><span>Céline Dobigeon — IUT, Université de Bordeaux</span><span>Programmes Arduino : saisissez le nom et le mot de passe du réseau Wi-Fi avant de téléverser, et choisissez la carte DOIT ESP32 DEVKIT V1.</span></footer>
 </div>
 </body>
 </html>

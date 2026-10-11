@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TP – Mesurer une distance avec le capteur ultrason HC-SR04 et l&#x27;afficher sur une page web — Internet des objets (IoT)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/fiche.css">
+</head>
+<body>
+<div class="crumb"><div class="in">
+  <a href="../index.html"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="18" width="22" height="22" rx="3"/><path d="M18 13a9 9 0 0 1 12 0"/><path d="M14 8a15 15 0 0 1 20 0"/><path d="M19 40v4M29 40v4M8 25h5M8 33h5M35 25h5M35 33h5"/></svg>Internet des objets (IoT)</a><span class="sep">/</span>
+  <a href="../index.html#tp">Travaux pratiques</a><span class="sep">/</span>
+  <b>TP capteur HC-SR04</b>
+</div></div>
+<div class="wrap">
+<header>
+  <p class="eyebrow">Travaux pratiques — IoT · 06</p>
+  <h1>TP – Mesurer une distance avec le capteur ultrason HC-SR04 et l&#x27;afficher sur une page web</h1>
+  <p class="lede">Mesurer une distance avec le capteur HC-SR04 : votre programme de mesure dans l&#x27;Arduino IDE, un espace de travail de robot à trois LED, puis le serveur web créé avec le générateur de tableau de bord, et l&#x27;étude de l&#x27;erreur de mesure.</p>
+  <div class="meta"><span class="tag">HC-SR04</span><span class="tag">Ultrasons</span><span class="tag">Serveur web</span><span class="tag">Tableur</span></div>
+</header>
+<nav class="serie" aria-label="Les TP"><a href="../03_TP_Intro_ESP32/index.html"><b>TP 03</b>TP Intro ESP32</a><a href="../04_TP_Serveur_Web_LED/index.html"><b>TP 04</b>TP serveur web LED</a><a href="../05_TP_Serveur_Web_DHT11/index.html"><b>TP 05</b>TP serveur web DHT11</a><span class="ici"><b>TP 06</b>TP capteur HC-SR04</span><a href="../07_TP_Serveur_Web_servomoteur%20SG90/index.html"><b>TP 07</b>TP servomoteur SG90</a></nav>
+
+<section><h2>1. Objectifs</h2>
+<ul><li>Comprendre comment le capteur HC-SR04 mesure une distance avec des ultrasons.</li><li>Réaliser le câblage du capteur, avec son pont diviseur, puis de trois LED.</li><li>Écrire et tester votre programme de mesure dans l&#x27;Arduino IDE.</li><li>Simuler l&#x27;espace de travail d&#x27;un robot mobile : une LED rouge, jaune ou verte s&#x27;allume selon la distance de l&#x27;obstacle.</li><li>Créer le serveur web avec le générateur de tableau de bord : jauge, voyants, courbe et fichier CSV.</li><li>Déterminer l&#x27;erreur de mesure du capteur avec un tableur.</li></ul>
+<div class="note "><p class="nt">Ce qui vous est fourni</p><ul><li>Le générateur de tableau de bord (<a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a>, ou en ligne : <a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a>) : c&#x27;est avec lui que vous créerez le programme du serveur web.</li><li>Les schémas de câblage et le schéma électrique de cette fiche.</li></ul><p>Votre travail : le câblage, vos programmes de mesure et de l&#x27;espace de travail, la création du serveur web avec le générateur, les tests, l&#x27;étude de l&#x27;erreur de mesure et les questions.</p></div>
+</section>
+<section><h2>2. Matériel</h2>
+<div class="tbl"><table><tr><th><p><b>Matériel</b></p></th><th><p><b>Remarque</b></p></th></tr><tr><td><p>1 carte DOIT ESP32 DEVKIT V1 + câble micro-USB</p></td><td><p>Le câble doit permettre le transfert de données (pas seulement la charge)</p></td></tr><tr><td><p>1 capteur ultrason HC-SR04</p></td><td><p>4 broches : VCC, TRIG, ECHO, GND. Il s&#x27;alimente en 5 V</p></td></tr><tr><td><p>1 résistance de 1 kΩ et 1 résistance de 2 kΩ</p></td><td><p>Le pont diviseur du signal ECHO (marron-noir-rouge et rouge-noir-rouge)</p></td></tr><tr><td><p>3 LED (rouge, jaune, verte) + 3 résistances de 220 Ω</p></td><td><p>Pour l&#x27;espace de travail du robot (partie 6)</p></td></tr><tr><td><p>1 plaque d&#x27;essai + fils mâle-femelle et mâle-mâle</p></td><td><p>Côté femelle : sur les broches de la carte ; côté mâle : dans la plaque d&#x27;essai</p></td></tr><tr><td><p>1 réglet (ou un mètre) et un obstacle plat (livre, carton)</p></td><td><p>Pour connaître la distance réelle de l&#x27;obstacle</p></td></tr><tr><td><p>1 ordinateur avec l&#x27;Arduino IDE</p></td><td><p>Les cartes ESP32 sont déjà installées</p></td></tr><tr><td><p>1 smartphone (ou l&#x27;ordinateur) avec un navigateur web</p></td><td><p>Connecté au même réseau Wi-Fi que la carte</p></td></tr><tr><td><p>Un tableur (Excel ou LibreOffice Calc)</p></td><td><p>Pour étudier l&#x27;erreur de mesure</p></td></tr></table></div>
+</section>
+<section><h2>3. Le capteur ultrason HC-SR04</h2>
+<p>Le capteur HC-SR04 mesure la distance d&#x27;un obstacle grâce aux ultrasons. Le module contient un émetteur et un récepteur d&#x27;ultrasons, et une puce qui les pilote.</p>
+<h3>Principe de fonctionnement</h3>
+<figure><img src="img/figure_01.jpeg" alt="" loading="lazy" style="max-width:415px"></figure>
+<p>Figure 1 – Fonctionnement physique du capteur</p>
+<figure><img src="img/figure_02.png" alt="" loading="lazy" style="max-width:566px"></figure>
+<p>Figure 2 – Signaux TRIGGER et ECHO (TTL : niveaux logiques 0 / 5 V)</p>
+<p>Le principe repose entièrement sur la vitesse du son. Une mesure se déroule ainsi :</p>
+<ol><li>La carte envoie une impulsion HIGH de 10 µs sur la broche TRIGGER (TRIG) du capteur.</li><li>Le capteur émet une série de 8 impulsions ultrasonores à 40 kHz (inaudibles pour l&#x27;oreille humaine).</li><li>Les ultrasons se propagent dans l&#x27;air jusqu&#x27;à l&#x27;obstacle, puis reviennent vers le capteur.</li><li>Le capteur détecte l&#x27;écho et termine la mesure.</li></ol>
+<p>La broche ECHO reste à HIGH pendant les étapes 3 et 4 : sa durée est celle de l&#x27;aller-retour des ultrasons. La carte mesure cette durée et en déduit la distance.</p>
+<div class="note "><p class="nt">Calculer la distance</p><p>Le son parcourt environ 343 m/s dans l&#x27;air à 20 °C, soit <b>0,343 mm par microseconde</b>.</p><p>La durée mesurée correspond à un <b>aller-retour</b> : la distance de l&#x27;obstacle est la moitié du chemin parcouru.</p><p>Distance (mm) = durée (µs) × 0,343 / 2</p></div>
+<h3>Caractéristiques techniques</h3>
+<div class="tbl"><table><tr><th><p><b>Caractéristique</b></p></th><th><p><b>Valeur</b></p></th></tr><tr><td><p>Tension d&#x27;alimentation</p></td><td><p>5 V</p></td></tr><tr><td><p>Consommation</p></td><td><p>environ 20 mA en fonctionnement</p></td></tr><tr><td><p>Portée</p></td><td><p>de 2 cm à 4 m en théorie ; de 10 cm à 2,5 m pour de bons résultats</p></td></tr><tr><td><p>Angle de mesure</p></td><td><p>moins de 15°</p></td></tr><tr><td><p>Fréquence des ultrasons</p></td><td><p>40 kHz</p></td></tr><tr><td><p>Signal ECHO</p></td><td><p>5 V quand il est à HIGH : il faut l&#x27;abaisser à 3,3 V pour la carte</p></td></tr></table></div>
+</section>
+<section><h2>4. Le câblage</h2>
+<div class="note amber"><p class="nt">Rappels</p><ul><li>Le HC-SR04 s&#x27;alimente en 5 V : la broche VIN de la carte fournit le 5 V de la prise USB.</li><li>La broche ECHO renvoie 5 V, alors que les entrées de la carte ne supportent que 3,3 V : le pont diviseur (1 kΩ et 2 kΩ) abaisse ce signal à 3,3 V.</li><li>Sur la plaque d&#x27;essai, les 5 trous d&#x27;une même colonne (a à e, ou f à j) sont reliés entre eux.</li><li>Réalisez tout le câblage carte débranchée.</li></ul></div>
+<h3>Schéma de câblage</h3>
+<figure><img src="img/figure_03.png" alt="" loading="lazy" style="max-width:623px"></figure>
+<p>Figure 3 – Câblage du capteur HC-SR04 et de son pont diviseur (les numéros correspondent à la légende)</p>
+<h3>Schéma électrique</h3>
+<figure><img src="img/figure_04.png" alt="" loading="lazy" style="max-width:623px"></figure>
+<p>Figure 4 – Schéma électrique : capteur HC-SR04, pont diviseur et trois LED (les LED servent à la partie 6)</p>
+<h3>Étapes</h3>
+<ol><li><b>Capteur HC-SR04</b> : broches VCC, TRIG, ECHO, GND dans les trous a14, a15, a16, a17, émetteur et récepteur face à vous.</li><li><b>Fil rouge</b> : du trou e14 (VCC) à la ligne rouge (+) du bas.</li><li><b>Fil orange</b> : du trou e15 (TRIG) à la broche <b>D5</b> de la carte.</li><li><b>Résistance 1 kΩ</b> dans les trous b16 et b20 ; <b>résistance 2 kΩ</b> dans les trous c20 et c24.</li><li><b>Fil vert</b> : du trou e20 à la broche <b>D18</b> de la carte (signal ECHO ramené à 3,3 V).</li><li><b>Fils noirs</b> : des trous e17 et e24 à la ligne bleue (–) du bas.</li><li><b>Fil rouge</b> : de la broche <b>VIN</b> (5 V) de la carte à la ligne rouge (+) du bas.</li><li><b>Fil noir</b> : de la broche <b>GND</b> de la carte (côté droit) à la ligne bleue (–) du bas.</li></ol>
+<div class="note warn"><p class="nt">Attention</p><ul><li>Ne reliez jamais la broche ECHO directement à la carte : 5 V sur une entrée prévue pour 3,3 V peut l&#x27;abîmer.</li><li>Ici, la ligne rouge (+) du bas porte du 5 V : n&#x27;y branchez pas de composant prévu pour 3,3 V.</li></ul></div>
+<p><b>Faites vérifier votre câblage par l&#x27;enseignant avant de brancher la carte.</b></p>
+<ul class="check"><li>Câblage vérifié</li></ul>
+</section>
+<section><h2>5. Mesurer avec votre programme dans l&#x27;Arduino IDE</h2>
+<p>Avant de créer le serveur web, vérifiez votre câblage et le capteur avec un programme que vous écrivez vous-même : il affiche la distance dans le moniteur série.</p>
+<ol><li>Branchez la carte à l&#x27;ordinateur avec le câble micro-USB.</li><li>Créez un nouveau croquis, <code>Mesure_HCSR04</code> (<code>Fichier &gt; Nouveau croquis</code>). Choisissez la carte (<code>Outils &gt; Carte &gt; esp32 &gt; DOIT ESP32 DEVKIT V1</code>) et le port (<code>Outils &gt; Port</code>).</li><li>Écrivez le programme : toutes les 0,5 s, la carte déclenche une mesure et affiche la distance en millimètres dans le moniteur série. Aide : déclarez TRIG (broche <b>5</b>) en sortie et ECHO (broche <b>18</b>) en entrée avec <code>pinMode()</code> ; l&#x27;impulsion de déclenchement s&#x27;obtient avec <code>digitalWrite(trig, LOW)</code>, <code>delayMicroseconds(2)</code>, <code>digitalWrite(trig, HIGH)</code>, <code>delayMicroseconds(10)</code>, <code>digitalWrite(trig, LOW)</code> ; <code>pulseIn(echo, HIGH)</code> renvoie ensuite la durée de l&#x27;écho en microsecondes.</li><li>Calculez la distance avec la formule de la partie 3, et affichez-la avec <code>Serial.print()</code>.</li><li>Téléversez (flèche →) et ouvrez le <code>Moniteur série</code> à 115200 bauds. Si le téléversement bloque sur « Connecting… », maintenez le bouton BOOT enfoncé jusqu&#x27;au début du transfert.</li><li>Placez l&#x27;obstacle à 100 mm, 200 mm puis 300 mm du capteur, mesurés au réglet, et comparez avec la distance affichée.</li></ol>
+<ul class="check"><li>Une distance s&#x27;affiche toutes les 0,5 s</li><li>La distance affichée est proche de la distance réelle</li></ul>
+<p>Notez sur votre feuille les distances affichées pour 100, 200 et 300 mm.</p>
+</section>
+<section><h2>6. L&#x27;espace de travail d&#x27;un robot mobile</h2>
+<p>On simule l&#x27;espace de travail d&#x27;un robot mobile : le capteur détecte la distance d&#x27;un objet, et trois LED indiquent la zone où il se trouve.</p>
+<ul><li>La LED <b>rouge</b> s&#x27;allume quand la distance est strictement inférieure à 60 mm.</li><li>La LED <b>jaune</b> s&#x27;allume quand la distance est comprise entre 60 et 120 mm.</li><li>La LED <b>verte</b> s&#x27;allume quand la distance est strictement supérieure à 120 mm.</li></ul>
+<figure><img src="img/figure_05.png" alt="" loading="lazy" style="max-width:623px"></figure>
+<p>Figure 5 – Câblage des trois LED, dans la moitié basse de la plaque (le capteur reste branché)</p>
+<ol><li>Débranchez la carte et câblez les trois LED comme sur la figure 5, sans toucher au capteur : LED rouge sur <b>D21</b>, LED jaune sur <b>D22</b>, LED verte sur <b>D23</b>.</li><li>Faites vérifier le câblage, puis rebranchez la carte.</li><li>Complétez votre programme : après chaque mesure, allumez la LED de la zone et éteignez les deux autres. Aide : <code>if (distance &lt; 60) { … } else if (distance &lt;= 120) { … } else { … }</code> ; <code>digitalWrite(broche, HIGH)</code> allume une LED.</li><li>Avec le réglet, placez l&#x27;obstacle dans chaque zone et vérifiez la LED allumée.</li></ol>
+<ul class="check"><li>La LED rouge s&#x27;allume sous 60 mm</li><li>La LED jaune s&#x27;allume entre 60 et 120 mm</li><li>La LED verte s&#x27;allume au-delà de 120 mm</li></ul>
+</section>
+<section><h2>7. Créer le serveur web avec le générateur de tableau de bord</h2>
+<p>Le programme du serveur web, vous le créez sans le programmer, avec le générateur de tableau de bord : vous choisissez ce que la page affiche, et le générateur écrit le programme. Il sait aussi allumer les LED automatiquement selon la distance.</p>
+<ol><li>Ouvrez le générateur (<code><a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a></code>, ou <code><a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a></code>) et choisissez <b>« Page vide »</b>.</li><li><b>Ma carte</b> : saisissez le Wi-Fi. Ajoutez un <b>Capteur ultrason HC-SR04</b> : TRIG sur <b>D5</b>, ECHO sur <b>D18</b>, distance en mm, de 0 à 500 mm. Choisissez une mesure <b>toutes les 1 s</b>.</li><li>Ajoutez trois <b>sorties</b> : « LED rouge » sur <b>D21</b>, « LED jaune » sur <b>D22</b>, « LED verte » sur <b>D23</b>. Pour chacune, choisissez la commande <b>« Automatique, selon une mesure »</b>, la mesure « Distance », et la condition de la partie 6 (inférieure à 60, comprise entre 60 et 120, supérieure à 120).</li><li><b>Apparence</b> : choisissez le rechargement automatique <b>toutes les 2 s</b>.</li><li><b>Blocs</b> : ajoutez un titre (« Espace de travail du robot »), une forme pour la distance (jauge, réservoir, grand chiffre… à vous de choisir), un <b>voyant</b> pour chaque LED, la <b>courbe</b> de la distance, les <b>informations de la carte</b> et le <b>téléchargement CSV</b>.</li><li>Testez dans l&#x27;aperçu : bougez le curseur de la distance et regardez les voyants changer.</li><li>Cliquez sur <b>Télécharger le programme</b>, ouvrez le fichier <code>.ino</code> dans l&#x27;Arduino IDE et téléversez-le. Si le téléchargement ne démarre pas, utilisez « Copier le programme » et collez-le dans un nouveau croquis.</li><li>Ouvrez le <code>Moniteur série</code> (115200 bauds) et appuyez sur le bouton EN : l&#x27;adresse IP s&#x27;affiche, puis une mesure par seconde.</li></ol>
+<p>Notez sur votre feuille l&#x27;adresse IP de votre carte (par exemple 192.168.1.42) : vous en aurez besoin pour ouvrir la page.</p>
+<ul class="check"><li>L&#x27;adresse IP s&#x27;affiche dans le moniteur série, puis une mesure par seconde</li></ul>
+</section>
+<section><h2>8. Tester</h2>
+<ol><li>Connectez le téléphone (ou l&#x27;ordinateur) au même réseau Wi-Fi que la carte.</li><li>Dans le navigateur, tapez http:// suivi de l&#x27;adresse IP de la carte (par exemple http://192.168.1.42).</li><li>Déplacez l&#x27;obstacle devant le capteur : observez la page, les voyants et les LED de la plaque.</li><li>Fermez la page et déplacez encore l&#x27;obstacle : les LED de la plaque changent-elles toujours ?</li></ol>
+<ul class="check"><li>La distance affichée suit l&#x27;obstacle</li><li>Les voyants de la page et les LED de la plaque indiquent la même zone</li><li>Les LED fonctionnent même quand la page est fermée</li></ul>
+</section>
+<section><h2>9. Déterminer l&#x27;erreur de mesure du HC-SR04</h2>
+<ol><li>Placez l&#x27;obstacle tous les 10 mm, de 20 à 500 mm, mesurés au réglet. Pour chaque position, attendez quelques mesures, puis notez la distance réelle et la distance affichée.</li><li>Vous pouvez aussi télécharger le fichier CSV de la page : il contient toutes les mesures, avec l&#x27;instant de chacune.</li><li>Dans le tableur, calculez pour chaque position l&#x27;erreur (distance mesurée – distance réelle) et l&#x27;erreur relative en % (erreur / distance réelle × 100).</li><li>Tracez un graphique de l&#x27;erreur en %, en fonction de la distance réelle.</li><li>Tracez le graphique de linéarité du capteur : distance mesurée en fonction de la distance réelle, sur 20 à 500 mm. Ajoutez la droite y = x pour comparer.</li></ol>
+<ul class="check"><li>Les deux graphiques sont réalisés</li></ul>
+</section>
+<section class="questions"><h2>10. Questions de compréhension</h2>
+<ol><li>Pourquoi divise-t-on par 2 la durée de l&#x27;écho pour calculer la distance ?</li><li>Le capteur mesure une durée d&#x27;écho de 1 200 µs. À quelle distance se trouve l&#x27;obstacle ?</li><li>Pourquoi faut-il un pont diviseur sur la broche ECHO, mais pas sur la broche TRIG ? Calculez la tension obtenue avec 1 kΩ et 2 kΩ.</li><li>Dans le programme du serveur web, qui allume les LED : la page web ou la carte ? Que se passe-t-il quand personne n&#x27;ouvre la page ?</li><li>Que renvoie pulseIn() quand aucun obstacle ne renvoie d&#x27;écho ? Comment le programme créé par le générateur évite-t-il d&#x27;afficher 0 ?</li><li>D&#x27;après votre étude de l&#x27;erreur, sur quelle plage de distances le capteur est-il le plus fiable ? Proposez une explication aux écarts en dehors de cette plage.</li><li>La vitesse du son dépend de la température : 331 m/s à 0 °C, 343 m/s à 20 °C. Quelle erreur commet-on à 0 °C pour un obstacle à 300 mm, si le programme garde 343 m/s ?</li><li>Maintenance : on veut surveiller le niveau d&#x27;huile d&#x27;une cuve avec ce capteur, placé au-dessus. Que mesure-t-il exactement ? Comment en déduire la hauteur d&#x27;huile ?</li></ol>
+</section>
+<section><h2>11. Pour aller plus loin</h2>
+<h3>A. Afficher la distance sur un écran LCD (I2C)</h3>
+<ul><li>Branchez un écran LCD I2C (SDA sur D21 et SCL sur D22 : déplacez alors les LED jaune et rouge sur d&#x27;autres broches) et installez la bibliothèque LiquidCrystal I2C.</li><li>Modifiez votre programme de la partie 5 pour afficher la distance sur l&#x27;écran, en plus du moniteur série.</li></ul>
+<h3>B. Corriger la vitesse du son avec la température</h3>
+<ul><li>Ajoutez le module DHT11 du TP 05 et calculez la vitesse du son : v (m/s) = 331,3 + 0,606 × température (°C).</li><li>Utilisez cette vitesse dans le calcul de la distance, et comparez avec la valeur à 343 m/s.</li></ul>
+</section>
+<section><h2>12. En cas de problème</h2>
+<div class="tbl"><table><tr><th><p><b>Problème</b></p></th><th><p><b>Solution</b></p></th></tr><tr><td><p>La carte n&#x27;apparaît pas dans Outils &gt; Port</p></td><td><p>Vérifier le câble micro-USB (données), installer le pilote USB (CP210x), changer de port USB.</p></td></tr><tr><td><p>Le téléversement bloque sur « Connecting… »</p></td><td><p>Maintenir le bouton BOOT enfoncé au début du téléversement.</p></td></tr><tr><td><p>La distance affichée vaut toujours 0</p></td><td><p>Vérifier l&#x27;alimentation 5 V (fil VIN → ligne rouge), les broches TRIG (D5) et ECHO (D18) dans le câblage et le programme, et le pont diviseur.</p></td></tr><tr><td><p>La distance saute ou est fausse</p></td><td><p>Obstacle trop petit, trop loin, mou (tissu) ou de biais : utiliser un obstacle plat, face au capteur, entre 10 cm et 2,5 m.</p></td></tr><tr><td><p>Des points s&#x27;affichent sans fin dans le moniteur série</p></td><td><p>La carte ne trouve pas le réseau Wi-Fi : vérifier le nom et le mot de passe saisis dans le générateur, puis prévenir l&#x27;enseignant.</p></td></tr><tr><td><p>Rien ne s&#x27;affiche dans le moniteur série</p></td><td><p>Régler la vitesse sur 115200 bauds, puis appuyer sur EN.</p></td></tr><tr><td><p>Une LED ne s&#x27;allume jamais</p></td><td><p>Vérifier sa broche (D21, D22 ou D23), le sens de la LED, sa résistance et sa liaison à la ligne bleue (–).</p></td></tr><tr><td><p>La page ne s&#x27;ouvre pas</p></td><td><p>Vérifier que le téléphone est sur le même Wi-Fi et que l&#x27;adresse commence par http:// (et non https://).</p></td></tr></table></div>
+</section>
+<footer>Céline Dobigeon — IUT, Université de Bordeaux · <a href="../index.html">Retour à l'accueil</a></footer>
+</div>
+</body>
+</html>
