@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Machine de maintenance ESP32</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --surface2:#F5F8FA; --ink:#14283B; --muted:#586A7B; --line:#C8D2DB; --track:#E3E9EE;
+  --cmd:#2B5FD6; --ret:#12845A; --copper:#B5652D; --ok:#2E7D32; --alert:#E06C00; --alarm:#C62828;
+  --ok-soft:#DDF0DE; --alert-soft:#FDEBD8; --alarm-soft:#FADADA;
+  --pcb:#1C2026; --chip:#BCC5CD; --codebg:#F3F6F8; --hl:#FFF1C9; --live:#EAF1FB;
+  --metal:#8FA3B5; --metal-d:#4D6478; --oil:#C99A2E; --oil-d:#8F6A12; --cab:#DCE3E9;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50; --track:#22323F;
+    --cmd:#79A2FF; --ret:#45C993; --copper:#DB8C50; --ok:#4CC66F; --alert:#FFA14A; --alarm:#FF6B61;
+    --ok-soft:#173A24; --alert-soft:#3D2A17; --alarm-soft:#40201F;
+    --pcb:#0B0E12; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419; --live:#1A2A40;
+    --metal:#7A90A3; --metal-d:#A9BCCB; --oil:#D9AE45; --oil-d:#A07C22; --cab:#243446;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50; --track:#22323F;
+  --cmd:#79A2FF; --ret:#45C993; --copper:#DB8C50; --ok:#4CC66F; --alert:#FFA14A; --alarm:#FF6B61;
+  --ok-soft:#173A24; --alert-soft:#3D2A17; --alarm-soft:#40201F;
+  --pcb:#0B0E12; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419; --live:#1A2A40;
+  --metal:#7A90A3; --metal-d:#A9BCCB; --oil:#D9AE45; --oil-d:#A07C22; --cab:#243446;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 20px 48px;display:grid;gap:18px}
+header{display:grid;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.intro{margin:0;max-width:80ch;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.controls .sep{width:1px;align-self:stretch;background:var(--line)}
+button,select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:8px 13px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible,select:focus-visible,input:focus-visible,.svgbtn:focus-visible{outline:2px solid var(--cmd);outline-offset:2px}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+button.blue{background:var(--cmd);color:#fff;border-color:var(--cmd);font-weight:600}
+button[aria-pressed="true"].tog{background:var(--alert-soft);border-color:var(--alert);color:var(--alert);font-weight:600}
+label.inline{display:inline-flex;align-items:center;gap:8px;font-size:14px}
+label.inline input[type=range]{width:130px;accent-color:var(--copper)}
+label.inline output{font-family:var(--mono);min-width:40px;font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+
+.main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px}
+@media (max-width:980px){.main{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:10px;align-content:start;min-width:0}
+.card h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+#scene{width:100%;height:auto;display:block}
+.status{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-family:var(--mono);font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.pill b{font-weight:500;color:var(--ink)}
+.st0{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)} .st0 b{color:var(--ok)}
+.st1{background:var(--alert-soft);border-color:var(--alert);color:var(--alert)} .st1 b{color:var(--alert)}
+.st2{background:var(--alarm-soft);border-color:var(--alarm);color:var(--alarm)} .st2 b{color:var(--alarm)}
+
+.banner{border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid}
+.banner b{font-family:var(--display);font-size:22px;font-weight:700}
+.banner span{font-size:13.5px}
+.ind{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:minmax(120px,1.1fr) 72px minmax(120px,2fr) 78px;gap:10px;align-items:center}
+@media (max-width:520px){.row{grid-template-columns:1fr 70px;}.row .bar{grid-column:1 / -1}.row .tag{justify-self:end}}
+.row .nm{font-size:14px;font-weight:500}
+.row .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.row .val{font-family:var(--mono);font-size:14px;text-align:right;font-variant-numeric:tabular-nums}
+.bar{position:relative;height:14px;background:var(--track);border-radius:7px;overflow:visible}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px;transition:width .2s,background .2s}
+.bar .mk{position:absolute;top:-4px;bottom:-4px;width:2px}
+.tag{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:99px;border:1px solid;text-align:center}
+.hint{margin:0;font-size:13.5px;color:var(--muted)}
+.hint b{color:var(--ink)}
+
+.lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px}
+@media (max-width:980px){.lower{grid-template-columns:1fr}}
+#log{margin:0;padding-left:0;list-style:none;display:grid;gap:4px;font-size:13.5px;max-height:260px;overflow:auto}
+#log li{display:flex;gap:8px;align-items:baseline}
+#log time{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:48px}
+ul.obs{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+pre.code{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:12.5px;line-height:1.55;overflow:auto;max-height:560px}
+pre.code span{display:block;padding:0 14px;white-space:pre;border-left:3px solid transparent;transition:background .25s}
+pre.code span.live{background:var(--live)}
+pre.code span.on{background:var(--hl);border-left-color:var(--copper)}
+pre.code .cm{color:var(--muted);font-style:normal}
+
+/* SVG */
+.s-label{font-family:var(--display);font-weight:600;font-size:14px;fill:var(--ink)}
+.s-sub{font-family:var(--body);font-size:10.5px;fill:var(--muted)}
+.s-tiny{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+.plate{fill:var(--metal-d)}
+.servo{fill:#1E63C4;stroke:#0E3B6E;stroke-width:1.5}
+.arm{fill:var(--metal);stroke:var(--metal-d);stroke-width:1.5}
+.pivot{fill:#F2F2F2;stroke:#777;stroke-width:1.5}
+.tank{fill:none;stroke:var(--metal-d);stroke-width:3}
+.oil{fill:var(--oil);transition:fill .3s}
+.oil-top{fill:var(--oil-d)}
+.hcsr{fill:#1565C0;stroke:#0D3C7A;stroke-width:1.5}
+.eye{fill:#C9CED3;stroke:#8A9097;stroke-width:1.5}
+.wave{fill:none;stroke:var(--cmd);stroke-width:1.6;opacity:0}
+.cab{fill:var(--cab);stroke:var(--metal-d);stroke-width:2}
+.dht{fill:#1E88E5;stroke:#0D47A1;stroke-width:1.2}
+.heat{fill:var(--alarm);opacity:0;transition:opacity .5s}
+.drop{fill:var(--cmd);opacity:0;transition:opacity .4s}
+.potb{fill:#2F5D8A;stroke:#1B3A57;stroke-width:1.5}
+.knob{fill:#D9D9D9;stroke:#777;stroke-width:1.5}
+.cable{fill:none;stroke-width:2.6;stroke-linecap:round;opacity:.9}
+.board{fill:var(--pcb);stroke:#000;stroke-width:1}
+.shield{fill:var(--chip)}
+.chip-t{font-family:var(--mono);font-size:10px;font-weight:500;fill:#1B2833}
+.pin{fill:#D4AF37}
+.led-off{opacity:.22;transition:opacity .2s} .led-on{opacity:1}
+.led-glow{opacity:0;transition:opacity .2s} .led-glow.on{opacity:.55}
+.svgbtn{cursor:pointer}
+.btn-cap{stroke:#000;stroke-width:1.2;transition:transform .1s}
+.svgbtn.press .btn-cap{transform:scale(.85)}
+.router{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ant{stroke:var(--ink);stroke-width:2.5;stroke-linecap:round}
+.arc{fill:none;stroke:var(--cmd);stroke-width:2;stroke-linecap:round}
+.wlink{stroke:var(--cmd);stroke-width:2;stroke-dasharray:5 6;fill:none;opacity:.45}
+.phone{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.screen{fill:var(--surface);stroke:var(--line)}
+.ph-title{font-family:var(--body);font-weight:600;font-size:9.5px;fill:var(--ink)}
+.ph-t{font-family:var(--mono);font-size:8.5px;fill:var(--ink)}
+.ph-state-t{font-family:var(--body);font-weight:600;font-size:9.5px;fill:#fff}
+.pk-req{fill:var(--cmd)} .pk-res{fill:var(--ret)}
+.pk-lab{font-family:var(--mono);font-size:9.5px;fill:var(--ink)}
+.pk-pill{fill:var(--surface);stroke-width:1.2}
+.stopmark{font-family:var(--display);font-weight:700;font-size:15px;fill:var(--alarm)}
+@media (prefers-reduced-motion: reduce){ pre.code span,.bar .fill{transition:none} }
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">IoT · Maintenance préventive · ESP32</div>
+    <h1>La machine pédagogique sous surveillance</h1>
+    <p class="intro">Un bras motorisé fait des cycles. L'ESP32 compte les cycles (maintenance systématique) et surveille l'effort du moteur, le niveau du bac de lubrifiant, la température et l'humidité de l'armoire électrique (maintenance conditionnelle). En alarme, la machine s'arrête toute seule. Mettez-la en marche et provoquez les défauts.</p>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="Commandes de la simulation">
+    <button id="bMarche" class="primary">Marche / Arrêt</button>
+    <button id="bEntretien" class="blue">Entretien effectué</button>
+    <span class="sep" aria-hidden="true"></span>
+    <label class="inline" for="pot">Potentiomètre (effort) <input type="range" id="pot" min="0" max="100" step="1" value="20"><output id="oPot">20 %</output></label>
+    <button id="bRemplir">Remplir le bac</button>
+    <button id="bChauffe" class="tog" aria-pressed="false">Chauffer l'armoire</button>
+    <button id="bSouffle" class="tog" aria-pressed="false">Souffler sur le DHT11</button>
+    <span class="sep" aria-hidden="true"></span>
+    <label class="inline" for="speed">Vitesse <select id="speed"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option></select></label>
+    <button id="bPause" aria-pressed="false">Pause</button>
+    <span class="spacer"></span>
+    <button id="bReset">Recommencer</button>
+  </div>
+
+  <div class="main">
+    <section class="card" aria-labelledby="hScene">
+      <h2 id="hScene">La machine, la carte et la page web</h2>
+      <svg id="scene" viewBox="0 0 900 450" role="img" aria-label="Bras motorisé, bac de lubrifiant avec capteur ultrason, armoire électrique avec capteur DHT11, potentiomètre, carte ESP32 avec trois LED et deux boutons, point d'accès Wi-Fi et téléphone"></svg>
+      <div class="status" aria-live="polite">
+        <span class="pill" id="stMachine">Machine : <b>arrêtée</b></span>
+        <span class="pill st0" id="stState">État : <b>NORMAL</b></span>
+        <span class="pill" id="stTime">Temps : <b>0 s</b></span>
+      </div>
+      <p class="hint">Les deux boutons dessinés sur la carte sont cliquables, comme ceux de la barre de commandes.</p>
+    </section>
+
+    <section class="card" aria-labelledby="hDash">
+      <h2 id="hDash">Les indicateurs de maintenance</h2>
+      <div class="banner st0" id="banner"><b id="bnState">NORMAL</b><span id="bnCause">Tous les indicateurs sont sous les seuils d'alerte.</span></div>
+      <div class="ind" id="ind"></div>
+      <p class="hint">Traits verticaux : seuil d'<b>alerte</b> (orange) et seuil d'<b>alarme</b> (rouge). L'état de la machine est celui de l'indicateur le plus grave.</p>
+    </section>
+  </div>
+
+  <div class="lower">
+    <section class="card" aria-labelledby="hLog">
+      <h2 id="hLog">Journal de la machine</h2>
+      <ul id="log" aria-live="polite"></ul>
+      <h2>À observer</h2>
+      <ul class="obs">
+        <li><b>Systématique :</b> à 40 cycles, entretien à prévoir (orange) ; à 50 cycles, arrêt (rouge). La machine refuse de redémarrer tant que l'entretien n'est pas validé.</li>
+        <li><b>Effort :</b> montez le potentiomètre : orange à 60 %, arrêt à 85 %.</li>
+        <li><b>Lubrifiant :</b> le bac se vide un peu à chaque cycle. L'entretien remet le compteur à zéro, mais ne remplit pas le bac.</li>
+        <li><b>Armoire :</b> l'humidité réagit vite, la température lentement. Le DHT11 ne mesure que toutes les 2 secondes.</li>
+        <li>La page web du téléphone se met à jour toutes les 2 secondes.</li>
+      </ul>
+    </section>
+    <section class="card" aria-labelledby="hCode">
+      <h2 id="hCode">Extrait du programme de l'ESP32</h2>
+      <pre class="code" id="code"></pre>
+      <p class="hint">En bleu clair : lignes exécutées en continu. En jaune : lignes exécutées à l'instant.</p>
+    </section>
+  </div>
+  <footer>Simulation simplifiée du programme ESP32_Maintenance_Machine. Dans l'activité, le niveau est simulé avec un carton devant le capteur ultrason ; ici, le bac se vide au fil des cycles.</footer>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt=(v,d)=>v.toFixed(d).replace(".",",");
+const STATE=["NORMAL","ALERTE","ALARME"];
+const C={CYC_P:40,CYC_E:50,EFF_A:60,EFF_B:85,NIV_A:30,NIV_B:10,T_A:30,T_B:40,H_A:80,D_PLEIN:5,D_VIDE:20};
+const CONSO=1.0;   // % de lubrifiant consommé par cycle
+
+function fresh(){
+  return {t:0,paused:false,run:false,up:false,angle:0,servoT:0,cycles:0,total:0,
+    effort:20,level:100,niveau:100,dist:5,T:23,H:45,tRead:NaN,hRead:NaN,heat:false,blow:false,
+    e:{c:0,f:0,n:0,t:0,h:0},state:0,cause:"",
+    mesT:0,dhtT:0,reqT:2,packets:[],phone:null,waveT:0};
+}
+let S=fresh();
+
+/* ------------------------------------------------ code */
+const CODE=[
+ ["void loop() {",""],
+ ["  server.handleClient();","live"],
+ ["  lireBoutons();","live"],
+ ["  if (millis() - tMesure >= 200) {           // toutes les 200 ms","mes"],
+ ["    effort = map(analogRead(PIN_POT), 0, 4095, 0, 100);","mes"],
+ ["    float d = mesurerDistance();             // HC-SR04","mes"],
+ ["    niveau = (DIST_VIDE - d) / (DIST_VIDE - DIST_PLEIN) * 100;","mes"],
+ ["    evaluer();","mes"],
+ ["  }",""],
+ ["  if (millis() - tDht >= 2000) {             // toutes les 2 s","dht"],
+ ["    temperature = dht.readTemperature();","dht"],
+ ["    humidite = dht.readHumidity();","dht"],
+ ["  }",""],
+ ["  if (enMarche && millis() - tServo >= 750) {","servo"],
+ ["    brasLeve = !brasLeve;","servo"],
+ ["    bras.write(brasLeve ? 90 : 0);           // le bras monte ou descend","servo"],
+ ["    if (!brasLeve) { cycles++; cyclesTotal++; }  // un cycle de plus","cyc"],
+ ["  }",""],
+ ["}",""],
+ ["",""],
+ ["void evaluer() {",""],
+ ["  eCycles = etatHaut(cycles, CYCLES_PREVENIR, CYCLES_ENTRETIEN);","ec"],
+ ["  eEffort = etatHaut(effort, EFFORT_ALERTE, EFFORT_ALARME);","ef"],
+ ["  eNiveau = (niveau <= NIVEAU_ALARME) ? 2 : (niveau <= NIVEAU_ALERTE) ? 1 : 0;","en"],
+ ["  eTemp = etatHaut(temperature, TEMP_ALERTE, TEMP_ALARME);","et"],
+ ["  eHum = (humidite >= HUM_ALERTE) ? 1 : 0;","eh"],
+ ["  etat = max(eCycles, eEffort, eNiveau, eTemp, eHum);  // le plus grave","emax"],
+ ["  if (etat == 2 && enMarche) {","stop"],
+ ["    enMarche = false;                        // ARRÊT AUTOMATIQUE","stop"],
+ ["  }",""],
+ ["  // allume la LED verte, orange ou rouge","led"],
+ ["}",""],
+ ["",""],
+ ["// dans lireBoutons() :",""],
+ ["if (appui sur Marche) {","bm"],
+ ["  if (enMarche) enMarche = false;             // arrêt par l'opérateur","boff"],
+ ["  else if (etat == 2) Serial.println(\"Démarrage refusé\");","bref"],
+ ["  else enMarche = true;                        // démarrage","bon"],
+ ["}",""],
+ ["if (appui sur Entretien) cycles = 0;          // entretien effectué","bent"],
+ ["",""],
+ ["void handleRoot() {                           // requête GET /","root"],
+ ["  server.send(200, \"text/html; charset=utf-8\", page());","root"],
+ ["}",""]
+];
+const codeEl=$("code"), spans={};
+CODE.forEach(([t,k])=>{
+  const s=document.createElement("span"); s.dataset.k=k;
+  const i=t.indexOf("//");
+  if(i>=0){ s.appendChild(document.createTextNode(t.slice(0,i))); const c=document.createElement("em"); c.className="cm"; c.textContent=t.slice(i); s.appendChild(c); }
+  else s.textContent=t||" ";
+  if(k==="live"||k==="mes") s.classList.add("live");
+  codeEl.appendChild(s); (spans[k]=spans[k]||[]).push(s);
+});
+const ft={};
+function flash(keys,ms){ keys.forEach(k=>{ (spans[k]||[]).forEach(s=>s.classList.add("on")); clearTimeout(ft[k]); ft[k]=setTimeout(()=>(spans[k]||[]).forEach(s=>s.classList.remove("on")),ms||700); }); }
+
+/* ------------------------------------------------ indicateurs (tableau de bord) */
+const IND=[
+ {k:"c",nm:"Cycles depuis l'entretien",sub:"maintenance systématique",max:60,a:C.CYC_P,b:C.CYC_E,low:false,val:()=>String(S.cycles),num:()=>S.cycles},
+ {k:"f",nm:"Effort du moteur",sub:"potentiomètre",max:100,a:C.EFF_A,b:C.EFF_B,low:false,val:()=>S.effort+" %",num:()=>S.effort},
+ {k:"n",nm:"Niveau de lubrifiant",sub:"capteur ultrason",max:100,a:C.NIV_A,b:C.NIV_B,low:true,val:()=>S.niveau+" %",num:()=>S.niveau},
+ {k:"t",nm:"Température armoire",sub:"DHT11",max:50,a:C.T_A,b:C.T_B,low:false,val:()=>isNaN(S.tRead)?"—":S.tRead+" °C",num:()=>isNaN(S.tRead)?0:S.tRead},
+ {k:"h",nm:"Humidité armoire",sub:"DHT11 (alerte seulement)",max:100,a:C.H_A,b:null,low:false,val:()=>isNaN(S.hRead)?"—":S.hRead+" %",num:()=>isNaN(S.hRead)?0:S.hRead}
+];
+const indEl=$("ind");
+IND.forEach(I=>{
+  const r=document.createElement("div"); r.className="row";
+  r.innerHTML=`<div class="nm">${I.nm}<small>${I.sub}</small></div><div class="val" id="v_${I.k}">—</div>
+    <div class="bar"><div class="fill" id="f_${I.k}"></div>
+      <div class="mk" style="left:${I.a/I.max*100}%;background:var(--alert)"></div>
+      ${I.b!=null?`<div class="mk" style="left:${I.b/I.max*100}%;background:var(--alarm)"></div>`:""}</div>
+    <div class="tag" id="g_${I.k}">NORMAL</div>`;
+  indEl.appendChild(r);
+});
+const COLV=["var(--ok)","var(--alert)","var(--alarm)"];
+
+/* ------------------------------------------------ scène */
+const svg=$("scene");
+function el(tag,a,p){ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); if(p) p.appendChild(e); return e; }
+function tx(p,x,y,s,cls,an){ const t=el("text",{x,y,class:cls,"text-anchor":an||"middle"},p); t.textContent=s; return t; }
+const defs=el("defs",{},svg);
+[["gG","#43A047"],["gO","#FB8C00"],["gR","#E53935"]].forEach(([id,c])=>{ const g=el("radialGradient",{id},defs); el("stop",{offset:"0%","stop-color":c,"stop-opacity":"0.9"},g); el("stop",{offset:"100%","stop-color":c,"stop-opacity":"0"},g); });
+const clip=el("clipPath",{id:"tankClip"},defs); el("rect",{x:292,y:262,width:106,height:106},clip);
+
+// liaisons Wi-Fi
+el("path",{d:"M 640 160 L 752 118",class:"wlink"},svg); el("path",{d:"M 752 118 L 830 215",class:"wlink"},svg);
+// câbles vers la carte
+el("path",{d:"M 200 318 C 330 330, 420 300, 500 290",class:"cable",stroke:"#F57C00"},svg);
+el("path",{d:"M 88 415 C 250 425, 420 360, 500 318",class:"cable",stroke:"#6A1B9A"},svg);
+el("path",{d:"M 345 214 C 420 214, 440 250, 500 262",class:"cable",stroke:"#00897B"},svg);
+el("path",{d:"M 110 160 C 300 150, 420 200, 500 234",class:"cable",stroke:"#F9A825"},svg);
+
+// armoire électrique + DHT11
+el("rect",{x:26,y:96,width:96,height:120,rx:6,class:"cab"},svg);
+el("line",{x1:74,y1:104,x2:74,y2:208,stroke:"var(--metal-d)","stroke-width":1,opacity:.5},svg);
+el("circle",{cx:90,cy:160,r:30,class:"heat",id:"heatGlow"},svg);
+el("rect",{x:78,y:146,width:26,height:30,rx:3,class:"dht"},svg);
+for(let i=0;i<4;i++) for(let j=0;j<3;j++) el("rect",{x:82+j*7,y:150+i*6,width:4,height:3,fill:"#BBDEFB"},svg);
+const drops=[[58,128],[48,150],[60,176]].map(([x,y])=>el("path",{d:`M ${x} ${y-6} Q ${x+5} ${y+2} ${x} ${y+4} Q ${x-5} ${y+2} ${x} ${y-6} Z`,class:"drop"},svg));
+tx(svg,74,86,"Armoire électrique","s-label"); tx(svg,74,232,"DHT11","s-tiny");
+
+// bac + HC-SR04
+el("rect",{x:290,y:260,width:110,height:110,rx:4,class:"tank"},svg);
+const oil=el("rect",{x:292,y:262,width:106,height:106,class:"oil","clip-path":"url(#tankClip)"},svg);
+const oilTop=el("rect",{x:292,y:262,width:106,height:3,class:"oil-top"},svg);
+tx(svg,345,392,"Bac de lubrifiant","s-label");
+el("rect",{x:300,y:198,width:90,height:26,rx:4,class:"hcsr"},svg);
+el("circle",{cx:325,cy:224,r:9,class:"eye"},svg); el("circle",{cx:365,cy:224,r:9,class:"eye"},svg);
+tx(svg,345,192,"HC-SR04","s-tiny");
+const waves=[0,1,2].map(i=>el("path",{d:"",class:"wave"},svg));
+const distLab=tx(svg,410,250,"","s-tiny","start");
+
+// bras (servo) + potentiomètre
+el("rect",{x:20,y:330,width:220,height:14,rx:4,class:"plate"},svg);
+el("rect",{x:120,y:292,width:80,height:38,rx:5,class:"servo"},svg);
+tx(svg,160,316,"SG90","chip-t").setAttribute("fill","#fff");
+const arm=el("g",{id:"arm"},svg);
+el("rect",{x:170,y:280,width:120,height:14,rx:7,class:"arm"},arm);
+el("rect",{x:278,y:272,width:10,height:30,rx:3,class:"arm"},arm);
+el("circle",{cx:176,cy:287,r:10,class:"pivot"},svg);
+tx(svg,120,372,"Bras de la machine","s-label");
+const cycLab=tx(svg,120,388,"0 cycle","s-sub");
+el("rect",{x:40,y:398,width:48,height:36,rx:5,class:"potb"},svg);
+el("circle",{cx:64,cy:416,r:13,class:"knob"},svg);
+const potNeedle=el("line",{x1:64,y1:416,x2:64,y2:405,stroke:"#333","stroke-width":3,"stroke-linecap":"round"},svg);
+tx(svg,98,420,"effort","s-tiny","start");
+const stopMark=tx(svg,160,270,"","stopmark");
+
+// carte + LED + boutons
+el("rect",{x:500,y:130,width:140,height:250,rx:8,class:"board"},svg);
+for(let i=0;i<11;i++){ el("circle",{cx:510,cy:148+i*21,r:2.5,class:"pin"},svg); el("circle",{cx:630,cy:148+i*21,r:2.5,class:"pin"},svg); }
+el("rect",{x:532,y:144,width:76,height:60,rx:3,class:"shield"},svg); tx(svg,570,178,"ESP32","chip-t");
+const LEDS=[{y:230,c:"#43A047",g:"gG",l:"NORMAL"},{y:262,c:"#FB8C00",g:"gO",l:"ALERTE"},{y:294,c:"#E53935",g:"gR",l:"ALARME"}];
+const ledEls=LEDS.map(L=>{ const glow=el("circle",{cx:548,cy:L.y,r:20,fill:`url(#${L.g})`,class:"led-glow"},svg); const b=el("circle",{cx:548,cy:L.y,r:8,fill:L.c,stroke:"#000","stroke-width":1,class:"led-off"},svg); tx(svg,564,L.y+4,L.l,"chip-t","start").setAttribute("fill","#E8EEF3"); return {glow,b}; });
+function svgButton(x,y,color,label,handler){
+  const g=el("g",{class:"svgbtn",tabindex:"0",role:"button","aria-label":label},svg);
+  el("rect",{x:x-15,y:y-15,width:30,height:30,rx:4,fill:"#3A3A3A",stroke:"#111"},g);
+  el("circle",{cx:x,cy:y,r:10,fill:color,class:"btn-cap",style:`transform-origin:${x}px ${y}px`},g);
+  tx(svg,x,y+28,label.split(" ")[0],"chip-t").setAttribute("fill","#E8EEF3");
+  const act=()=>{ g.classList.add("press"); setTimeout(()=>g.classList.remove("press"),160); handler(); };
+  g.addEventListener("click",act); g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); act(); } });
+}
+svgButton(540,334,"#222","Marche / Arrêt",()=>pressMarche());
+svgButton(600,334,"#1E63C4","Entretien effectué",()=>pressEntretien());
+tx(svg,570,400,"Carte ESP32","s-label");
+
+// point d'accès + téléphone
+const ap=el("g",{},svg);
+[8,15,22].forEach(r=>el("path",{d:`M ${752-r} 100 A ${r} ${r} 0 0 1 ${752+r} 100`,class:"arc"},ap));
+el("line",{x1:732,y1:118,x2:726,y2:94,class:"ant"},ap); el("line",{x1:772,y1:118,x2:778,y2:94,class:"ant"},ap);
+el("rect",{x:718,y:114,width:68,height:24,rx:5,class:"router"},ap);
+tx(svg,752,158,"Point d'accès Wi-Fi","s-label");
+el("rect",{x:770,y:205,width:122,height:200,rx:12,class:"phone"},svg);
+el("rect",{x:778,y:219,width:106,height:170,rx:4,class:"screen"},svg);
+const phHead=tx(svg,831,234,"Machine : —","ph-title");
+const phBox=el("rect",{x:784,y:241,width:94,height:20,rx:4,fill:"#9aa5b1"},svg);
+const phBoxT=tx(svg,831,255,"—","ph-state-t");
+const phRows=["Cycles","Effort","Niveau","Temp.","Hum."].map((n,i)=>{
+  const dot=el("circle",{cx:789,cy:276+i*17,r:3.5,fill:"#9aa5b1"},svg);
+  const t=tx(svg,797,279+i*17,n+" : —","ph-t","start");
+  return {dot,t,n};
+});
+const phAge=tx(svg,831,380,"page non chargée","s-tiny");
+tx(svg,831,422,"Navigateur (page web)","s-label");
+const pkLayer=el("g",{},svg);
+
+/* ------------------------------------------------ paquets HTTP */
+const P={esp:{x:640,y:160},ap:{x:752,y:118},ph:{x:830,y:212}};
+function pathPoint(path,f){ const L=[];let T=0; for(let i=0;i<path.length-1;i++){const l=Math.hypot(path[i+1].x-path[i].x,path[i+1].y-path[i].y);L.push(l);T+=l;} let d=f*T; for(let i=0;i<L.length;i++){ if(d<=L[i]||i===L.length-1){const k=Math.min(1,d/L[i]);return {x:path[i].x+(path[i+1].x-path[i].x)*k,y:path[i].y+(path[i+1].y-path[i].y)*k};} d-=L[i]; } }
+function updatePackets(dt){
+  S.packets.forEach(p=>p.prog+=dt/0.9);
+  const done=S.packets.filter(p=>p.prog>=1); S.packets=S.packets.filter(p=>p.prog<1);
+  done.forEach(p=>{
+    if(p.kind==="req"){ flash(["root"]); S.packets.push({kind:"res",path:[P.esp,P.ap,P.ph],prog:0,label:"200 OK · page",data:snapshot()}); }
+    else S.phone={...p.data,t:S.t};
+  });
+}
+function snapshot(){ return {run:S.run,state:S.state,e:{...S.e},vals:IND.map(I=>I.val())}; }
+function drawPackets(){
+  pkLayer.innerHTML="";
+  S.packets.forEach(p=>{ const q=pathPoint(p.path,p.prog); const g=el("g",{transform:`translate(${q.x},${q.y})`},pkLayer); const w=p.label.length*6+12;
+    el("rect",{x:-w/2,y:-26,width:w,height:16,rx:8,class:"pk-pill",stroke:p.kind==="req"?"var(--cmd)":"var(--ret)"},g); tx(g,0,-15,p.label,"pk-lab"); el("circle",{r:6,class:p.kind==="req"?"pk-req":"pk-res"},g); });
+}
+
+/* ------------------------------------------------ logique (identique au programme) */
+const hi=(v,a,b)=>v>=b?2:(v>=a?1:0);
+function evaluer(){
+  const e=S.e, old={...e};
+  e.c=hi(S.cycles,C.CYC_P,C.CYC_E);
+  e.f=hi(S.effort,C.EFF_A,C.EFF_B);
+  e.n=S.niveau<=C.NIV_B?2:(S.niveau<=C.NIV_A?1:0);
+  e.t=isNaN(S.tRead)?0:hi(S.tRead,C.T_A,C.T_B);
+  e.h=(!isNaN(S.hRead)&&S.hRead>=C.H_A)?1:0;
+  const prev=S.state;
+  S.state=Math.max(e.c,e.f,e.n,e.t,e.h);
+  const parts=[]; if(e.c)parts.push("entretien périodique"); if(e.f)parts.push("effort du moteur"); if(e.n)parts.push("niveau de lubrifiant"); if(e.t)parts.push("température de l'armoire"); if(e.h)parts.push("humidité de l'armoire");
+  S.cause=parts.join(", ");
+  const keyOf={c:"ec",f:"ef",n:"en",t:"et",h:"eh"};
+  Object.keys(e).forEach(k=>{ if(e[k]!==old[k]) flash([keyOf[k],"emax","led"],900); });
+  if(S.state!==prev){
+    log(S.state, S.state? "cause : "+S.cause : "tous les indicateurs sont sous les seuils d'alerte");
+  }
+  if(S.state===2 && S.run){ S.run=false; flash(["stop"],1200); logInfo("<b>Arrêt automatique</b> de la machine."); }
+}
+function pressMarche(){
+  flash(["bm"],600);
+  if(S.run){ S.run=false; flash(["boff"],900); logInfo("Machine arrêtée par l'opérateur."); }
+  else if(S.state===2){ flash(["bref"],1200); logInfo("<b>Démarrage refusé</b> : alarme en cours ("+S.cause+")."); }
+  else { S.run=true; S.servoT=0; flash(["bon"],900); logInfo("Machine mise en marche."); }
+}
+function pressEntretien(){
+  S.cycles=0; flash(["bent"],900); logInfo("Entretien effectué : compteur de cycles remis à zéro."); evaluer();
+}
+
+/* ------------------------------------------------ simulation */
+function step(dt){
+  S.t+=dt;
+  // bras
+  if(S.run){
+    S.servoT+=dt;
+    if(S.servoT>=0.75){ S.servoT-=0.75; S.up=!S.up; flash(["servo"],400);
+      if(!S.up){ S.cycles++; S.total++; S.level=Math.max(0,S.level-CONSO); flash(["cyc"],500); } }
+  }
+  const target=S.up?90:0;
+  S.angle+= (target-S.angle)*Math.min(1,dt/(reduced?0.01:0.12));
+  // armoire
+  const Tt=S.heat?46:23, Ht=S.blow?92:45;
+  S.T+=(Tt-S.T)*Math.min(1,dt/7);
+  S.H+=(Ht-S.H)*Math.min(1,dt/(Ht>S.H?1.5:8));
+  // mesures toutes les 200 ms
+  S.mesT+=dt;
+  if(S.mesT>=0.2){ S.mesT-=0.2;
+    S.effort=+$("pot").value;
+    S.dist=C.D_VIDE-S.level/100*(C.D_VIDE-C.D_PLEIN)+(Math.random()-0.5)*0.15;
+    S.niveau=Math.max(0,Math.min(100,Math.floor((C.D_VIDE-S.dist)/(C.D_VIDE-C.D_PLEIN)*100)));
+    S.waveT=0.35; evaluer();
+  }
+  S.waveT=Math.max(0,S.waveT-dt);
+  // DHT11 toutes les 2 s
+  S.dhtT+=dt;
+  if(S.dhtT>=2){ S.dhtT-=2; S.tRead=Math.round(S.T); S.hRead=Math.round(S.H); flash(["dht"],600); evaluer(); }
+  // page web toutes les 2 s
+  S.reqT-=dt;
+  if(S.reqT<=0){ S.reqT+=2; S.packets.push({kind:"req",path:[P.ph,P.ap,P.esp],prog:0,label:"GET /"}); }
+  updatePackets(dt);
+}
+
+/* ------------------------------------------------ rendu */
+function render(){
+  $("arm").setAttribute("transform",`rotate(${(-S.angle).toFixed(1)} 176 287)`);
+  cycLab.textContent=S.cycles+(S.cycles>1?" cycles":" cycle")+" · total "+S.total;
+  stopMark.textContent=(!S.run&&S.state===2)?"ARRÊT AUTOMATIQUE":"";
+  const h=106*S.level/100, y=262+106-h;
+  oil.setAttribute("y",y); oil.setAttribute("height",h);
+  oilTop.setAttribute("y",y); oilTop.style.display=S.level>0?"":"none";
+  const surf=y, k=S.waveT/0.35;
+  waves.forEach((w,i)=>{ const f=((1-k)+i*0.12)%1, yy=232+(surf-232)*f; w.setAttribute("d",`M 331 ${Math.min(yy,surf)} q 14 6 28 0`); w.style.opacity=S.waveT>0?(0.8-i*0.2):0; });
+  distLab.textContent="distance : "+fmt(S.dist,1)+" cm";
+  const pa=(-135+S.effort*2.7)*Math.PI/180;
+  potNeedle.setAttribute("x2",64+11*Math.sin(pa)); potNeedle.setAttribute("y2",416-11*Math.cos(pa));
+  $("heatGlow").style.opacity=Math.max(0,Math.min(0.5,(S.T-24)/40));
+  drops.forEach((d,i)=>d.style.opacity=S.H>60+i*8?0.85:0);
+  ledEls.forEach((L,i)=>{ const on=i===S.state; L.b.setAttribute("class",on?"led-on":"led-off"); L.glow.setAttribute("class","led-glow"+(on?" on":"")); });
+  // téléphone
+  if(S.phone){
+    const c=["#2e7d32","#ef6c00","#c62828"][S.phone.state];
+    phHead.textContent="Machine : "+(S.phone.run?"EN MARCHE":"ARRÊTÉE");
+    phBox.setAttribute("fill",c); phBoxT.textContent="État : "+STATE[S.phone.state];
+    const es=["c","f","n","t","h"];
+    phRows.forEach((r,i)=>{ r.t.textContent=r.n+" : "+S.phone.vals[i]; r.dot.setAttribute("fill",["#2e7d32","#ef6c00","#c62828"][S.phone.e[es[i]]]); });
+    phAge.textContent="reçue il y a "+Math.max(0,Math.floor(S.t-S.phone.t))+" s";
+  }
+  drawPackets();
+  // tableau de bord
+  IND.forEach(I=>{
+    const e=S.e[I.k];
+    $("v_"+I.k).textContent=I.val();
+    const f=$("f_"+I.k); f.style.width=Math.max(0,Math.min(100,I.num()/I.max*100))+"%"; f.style.background=COLV[e];
+    const g=$("g_"+I.k); g.textContent=STATE[e]; g.style.color=COLV[e]; g.style.borderColor=COLV[e];
+  });
+  const bn=$("banner"); bn.className="banner st"+S.state; $("bnState").textContent=(S.run?"EN MARCHE · ":"ARRÊTÉE · ")+STATE[S.state];
+  $("bnCause").textContent=S.state?("Cause : "+S.cause+"."):"Tous les indicateurs sont sous les seuils d'alerte.";
+  $("stMachine").innerHTML="Machine : <b>"+(S.run?"en marche":"arrêtée")+"</b>";
+  const sp=$("stState"); sp.className="pill st"+S.state; sp.innerHTML="État : <b>"+STATE[S.state]+"</b>";
+  $("stTime").innerHTML="Temps : <b>"+Math.floor(S.t)+" s</b>";
+}
+
+/* ------------------------------------------------ journal */
+function stamp(){ return `<time>${Math.floor(S.t)} s</time>`; }
+function log(st,txt){
+  const col=COLV[st]; const li=document.createElement("li");
+  li.innerHTML=`${stamp()}<span><span class="tag" style="color:${col};border-color:${col}">${STATE[st]}</span> ${txt}</span>`;
+  $("log").prepend(li); trim();
+}
+function logInfo(html){ const li=document.createElement("li"); li.innerHTML=`${stamp()}<span>${html}</span>`; $("log").prepend(li); trim(); }
+function trim(){ while($("log").children.length>14) $("log").lastChild.remove(); }
+
+/* ------------------------------------------------ boucle */
+let last=performance.now();
+function frame(now){
+  let dt=Math.min(0.1,(now-last)/1000); last=now;
+  if(!S.paused){ const sp=+$("speed").value; const n=Math.ceil(sp); for(let i=0;i<n;i++) step(dt*sp/n); }
+  render(); requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------ commandes */
+$("bMarche").addEventListener("click",pressMarche);
+$("bEntretien").addEventListener("click",pressEntretien);
+$("pot").addEventListener("input",e=>{ $("oPot").textContent=e.target.value+" %"; });
+$("bRemplir").addEventListener("click",()=>{ S.level=100; logInfo("Bac de lubrifiant rempli."); });
+$("bChauffe").addEventListener("click",()=>{ S.heat=!S.heat; $("bChauffe").setAttribute("aria-pressed",String(S.heat)); $("bChauffe").textContent=S.heat?"Refroidir l'armoire":"Chauffer l'armoire"; logInfo(S.heat?"L'armoire électrique chauffe (ventilation en panne).":"L'armoire refroidit (ventilation réparée)."); });
+$("bSouffle").addEventListener("click",()=>{ S.blow=!S.blow; $("bSouffle").setAttribute("aria-pressed",String(S.blow)); $("bSouffle").textContent=S.blow?"Arrêter de souffler":"Souffler sur le DHT11"; logInfo(S.blow?"Humidité dans l'armoire (on souffle sur le capteur).":"L'humidité redescend."); });
+$("bPause").addEventListener("click",()=>{ S.paused=!S.paused; $("bPause").setAttribute("aria-pressed",String(S.paused)); $("bPause").textContent=S.paused?"Reprendre":"Pause"; });
+$("bReset").addEventListener("click",()=>{
+  S=fresh(); $("pot").value=20; $("oPot").textContent="20 %"; $("speed").value="1";
+  ["bChauffe","bSouffle","bPause"].forEach(id=>$(id).setAttribute("aria-pressed","false"));
+  $("bChauffe").textContent="Chauffer l'armoire"; $("bSouffle").textContent="Souffler sur le DHT11"; $("bPause").textContent="Pause";
+  $("log").innerHTML=""; logInfo("La carte démarre : machine arrêtée.");
+  phHead.textContent="Machine : —"; phBox.setAttribute("fill","#9aa5b1"); phBoxT.textContent="—"; phAge.textContent="page non chargée";
+  phRows.forEach(r=>{ r.t.textContent=r.n+" : —"; r.dot.setAttribute("fill","#9aa5b1"); });
+});
+logInfo("La carte démarre : machine arrêtée.");
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

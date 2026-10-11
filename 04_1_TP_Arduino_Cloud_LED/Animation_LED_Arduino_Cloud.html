@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED connectée ESP32</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --surface2:#F5F8FA; --ink:#14283B; --muted:#586A7B; --line:#C8D2DB;
+  --cmd:#2B5FD6; --cmd-soft:#DCE6FB; --ret:#12845A; --ret-soft:#D6F0E4;
+  --copper:#B5652D; --led:#E3302B; --warn:#B4400C; --warn-soft:#FCE6DA;
+  --pcb:#1F3A52; --chip:#BCC5CD; --codebg:#F3F6F8; --hl:#FFF1C9;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+    --cmd:#79A2FF; --cmd-soft:#1D2E52; --ret:#45C993; --ret-soft:#153A2C;
+    --copper:#DB8C50; --led:#FF5A4F; --warn:#F2915A; --warn-soft:#3D2418;
+    --pcb:#284B69; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+  --cmd:#79A2FF; --cmd-soft:#1D2E52; --ret:#45C993; --ret-soft:#153A2C;
+  --copper:#DB8C50; --led:#FF5A4F; --warn:#F2915A; --warn-soft:#3D2418;
+  --pcb:#284B69; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 48px;display:grid;gap:18px}
+header{display:grid;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.intro{margin:0;max-width:70ch;color:var(--muted)}
+.intro a{color:var(--cmd)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:22px;height:0;border-top:3px dashed currentColor;display:inline-block}
+.legend .c{color:var(--cmd)} .legend .r{color:var(--ret)} .legend .w{color:var(--copper)}
+.legend .c i,.legend .r i{border-top-style:dashed}.legend .w i{border-top-style:solid}
+.legend b{color:var(--ink);font-weight:500}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.controls .sep{width:1px;align-self:stretch;background:var(--line)}
+button,select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:8px 13px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:focus-visible,select:focus-visible,input:focus-visible,.dash-hit:focus-visible{outline:2px solid var(--cmd);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.toggle{display:inline-flex;align-items:center;gap:9px}
+.toggle .track{width:38px;height:22px;border-radius:11px;background:var(--line);position:relative;transition:background .2s}
+.toggle .track::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:left .2s}
+.toggle[aria-pressed="true"] .track{background:var(--cmd)}
+.toggle[aria-pressed="true"] .track::after{left:19px}
+#wifiBtn[aria-pressed="false"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+label.inline{display:inline-flex;align-items:center;gap:7px;font-size:14px;cursor:pointer}
+.spacer{flex:1}
+
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+#stage{width:100%;height:auto;display:block}
+.status{display:flex;flex-wrap:wrap;gap:8px;padding:4px 6px 6px}
+.pill{font-family:var(--mono);font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.pill b{font-weight:500;color:var(--ink)}
+.pill.ok{background:var(--ret-soft);border-color:var(--ret);color:var(--ret)} .pill.ok b{color:var(--ret)}
+.pill.bad{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)} .pill.bad b{color:var(--warn)}
+
+.panels{display:grid;grid-template-columns:1.05fr 1fr;gap:18px}
+@media (max-width:860px){.panels{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px;align-content:start;min-width:0}
+.panel h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+.scenario{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#steps{margin:0;padding-left:24px;display:grid;gap:7px}
+#steps li{color:var(--muted)}
+#steps li.current{color:var(--ink);font-weight:500}
+#steps li.current::marker{color:var(--copper);font-weight:700}
+#steps li.alert{color:var(--warn)}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+.hint b{color:var(--ink)}
+.next-row{display:flex;gap:10px;align-items:center}
+pre.code{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:13px;line-height:1.55;overflow-x:auto}
+pre.code span{display:block;padding:0 14px;white-space:pre;border-left:3px solid transparent}
+pre.code span.on{background:var(--hl);border-left-color:var(--copper)}
+pre.code .cm{color:var(--muted)}
+.vars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.var{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.var small{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.var code{font-family:var(--mono);font-size:14px}
+.var.cmd code{color:var(--cmd)} .var.ret code{color:var(--ret)}
+.var.flash{animation:flash .9s ease}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--copper)}100%{box-shadow:0 0 0 0 transparent}}
+
+/* SVG */
+.n-label{font-family:var(--display);font-weight:600;font-size:17px;fill:var(--ink)}
+.n-sub{font-family:var(--body);font-size:12px;fill:var(--muted)}
+.l-label{font-family:var(--mono);font-size:11.5px;fill:var(--muted)}
+.lane-cmd{stroke:var(--cmd);stroke-width:2;stroke-dasharray:6 6;fill:none;opacity:.55}
+.lane-ret{stroke:var(--ret);stroke-width:2;stroke-dasharray:6 6;fill:none;opacity:.55}
+.arrow-cmd{fill:var(--cmd);opacity:.7}.arrow-ret{fill:var(--ret);opacity:.7}
+.wifi-link.off .lane-cmd,.wifi-link.off .lane-ret{stroke:var(--line);opacity:1}
+.wifi-link.off .arrow-cmd,.wifi-link.off .arrow-ret{fill:var(--line);opacity:1}
+.cut{font-family:var(--body);font-weight:700;font-size:26px;fill:var(--warn)}
+.wire{stroke:var(--copper);stroke-width:3;fill:none;stroke-linecap:round}
+.flow{stroke:var(--led);stroke-width:3;fill:none;stroke-dasharray:3 12;opacity:0}
+.flow.on{opacity:.95;animation:flow .7s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-15}}
+.dev-body{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.screen{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.sw-track{fill:var(--line);transition:fill .25s}
+.sw-knob{fill:var(--surface);stroke:var(--muted);stroke-width:1;transition:transform .25s}
+.sw-on .sw-track{fill:var(--cmd)} .sw-on .sw-knob{transform:translateX(14px)}
+.voy{fill:var(--line);stroke:var(--muted);stroke-width:1;transition:fill .3s}
+.voy-on .voy{fill:var(--ret)}
+.tiny{font-family:var(--mono);font-size:7.5px;fill:var(--muted)}
+.cloud{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.cloud-t{font-family:var(--display);font-weight:600;font-size:12px;fill:var(--ink)}
+.router{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ant{stroke:var(--ink);stroke-width:2.5;stroke-linecap:round}
+.arc{fill:none;stroke:var(--cmd);stroke-width:2.2;stroke-linecap:round}
+.ap.off .arc{stroke:var(--line)}
+.ap.pulse .arc{animation:pulse .9s ease-in-out infinite}
+.ap.pulse .arc:nth-child(2){animation-delay:.15s}.ap.pulse .arc:nth-child(3){animation-delay:.3s}
+@keyframes pulse{50%{opacity:.2}}
+.rled{fill:var(--ret)} .ap.off .rled{fill:var(--warn)}
+.pcb{fill:var(--pcb)} .shield{fill:var(--chip)} .chip-t{font-family:var(--mono);font-size:9px;font-weight:500;fill:#1B2833}
+.pin{fill:var(--copper)} .meander{stroke:var(--copper);stroke-width:1.6;fill:none}
+.usb{fill:var(--chip)}
+.esp-led{fill:#6B7885;transition:fill .3s} .online .esp-led{fill:#3FE09A}
+.led-dome{fill:var(--led);opacity:.28;transition:opacity .25s}
+.led-rim{fill:var(--led);opacity:.45}
+.leg{stroke:var(--muted);stroke-width:2}
+.led-glow{opacity:0;transition:opacity .3s}
+.led-on .led-dome{opacity:1} .led-on .led-glow{opacity:1}
+.res-body{fill:#D9C39A;stroke:#8C7651;stroke-width:1}
+.node.active .halo{opacity:1}
+.halo{fill:none;stroke:var(--copper);stroke-width:2;stroke-dasharray:4 5;opacity:0;transition:opacity .25s}
+.pk-dot-cmd{fill:var(--cmd)} .pk-dot-ret{fill:var(--ret)} .pk-dot-sys{fill:var(--copper)}
+.pk-pill{fill:var(--surface);stroke-width:1.5}
+.pk-cmd .pk-pill{stroke:var(--cmd)} .pk-ret .pk-pill{stroke:var(--ret)} .pk-sys .pk-pill{stroke:var(--copper)}
+.pk-t{font-family:var(--mono);font-size:11.5px;fill:var(--ink)}
+.dash-hit{cursor:pointer}
+.mismatch{font-family:var(--body);font-weight:600;font-size:11.5px;fill:var(--warn)}
+@media (prefers-reduced-motion: reduce){.flow.on,.ap.pulse .arc{animation:none}}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">TP IoT · ESP32 + Arduino Cloud</div>
+    <h1>Du tableau de bord à la LED, et retour</h1>
+    <p class="intro">Suivez le trajet des informations dans le TP : la connexion de la carte au Wi-Fi, la commande envoyée par l'interrupteur, l'allumage de la LED, puis le retour de son état réel vers le tableau de bord. À comparer avec <a href="../04_TP_Serveur_Web_LED/Animation_LED_Serveur_Web.html">la version serveur web</a>, sans cloud.</p>
+    <div class="legend" aria-label="Légende">
+      <span class="c"><i></i><b>Commande</b>&nbsp;led (tableau de bord → carte)</span>
+      <span class="r"><i></i><b>Retour d'état</b>&nbsp;etat_led (carte → tableau de bord)</span>
+      <span class="w"><i></i><b>Fil électrique</b>&nbsp;GPIO 26 → résistance → LED</span>
+    </div>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="Commandes de l'animation">
+    <button id="bootBtn" class="primary">1. Démarrer la carte</button>
+    <button id="ledBtn" class="toggle" aria-pressed="false"><span class="track" aria-hidden="true"></span><span id="ledBtnTxt">2. Allumer la LED</span></button>
+    <button id="wifiBtn" aria-pressed="true">3. Couper le Wi-Fi</button>
+    <span class="sep" aria-hidden="true"></span>
+    <label class="inline"><input type="checkbox" id="stepMode"> Pas à pas</label>
+    <label class="inline" for="speed">Vitesse
+      <select id="speed"><option value="0.6">Lente</option><option value="1" selected>Normale</option><option value="1.8">Rapide</option></select>
+    </label>
+    <span class="spacer"></span>
+    <button id="resetBtn">Recommencer</button>
+  </div>
+
+  <div class="stage-card">
+    <svg id="stage" role="img" aria-label="Chaîne IoT : tableau de bord, Arduino Cloud, point d'accès Wi-Fi, carte ESP32 et LED"></svg>
+    <div class="status" aria-live="polite">
+      <span class="pill" id="stBoard">Carte : <b>éteinte</b></span>
+      <span class="pill ok" id="stWifi">Wi-Fi : <b>actif</b></span>
+      <span class="pill" id="stLed">LED : <b>éteinte</b></span>
+    </div>
+  </div>
+
+  <div class="panels">
+    <section class="panel" aria-labelledby="hSteps">
+      <div class="scenario" id="scenario">Prêt</div>
+      <h2 id="hSteps">Ce qui se passe</h2>
+      <ol id="steps" aria-live="polite">
+        <li class="current">Cliquez sur « 1. Démarrer la carte » : l'ESP32 va se connecter au Wi-Fi puis à Arduino Cloud.</li>
+      </ol>
+      <div class="next-row">
+        <button id="nextBtn" disabled>Étape suivante →</button>
+        <p class="hint" id="hint">Cochez <b>Pas à pas</b> pour avancer à votre rythme.</p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="hCode">
+      <h2 id="hCode">Code exécuté sur l'ESP32</h2>
+      <pre class="code" id="code"></pre>
+      <div class="vars">
+        <div class="var cmd" id="vLed"><small>Cloud · led</small><code>false</code></div>
+        <div class="var ret" id="vEtat"><small>Cloud · etat_led</small><code>false</code></div>
+        <div class="var" id="vPin"><small>Carte · broche GPIO 26</small><code>0 V (LOW)</code></div>
+        <div class="var" id="vConn"><small>Carte · connexion</small><code>Offline</code></div>
+      </div>
+    </section>
+  </div>
+  <footer>Animation simplifiée : les temps de transfert réels sont de l'ordre de quelques dixièmes de seconde.</footer>
+</div>
+
+<script>
+(function(){
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("stage");
+const $ = id => document.getElementById(id);
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const S = { booted:false, wifi:true, online:false, cloudLed:false, pin:false, cloudEtat:false,
+            busy:false, token:0, vertical:null };
+
+/* ---------- code panel ---------- */
+const CODE = [
+  ["const int LED_PIN = 26;","pin"],
+  ["",""],
+  ["void setup() {","setup"],
+  ["  pinMode(LED_PIN, OUTPUT);","setup"],
+  ["  digitalWrite(LED_PIN, LOW);","setup"],
+  ["  initProperties();","setup"],
+  ["  etat_led = false;","setup"],
+  ["  ArduinoCloud.begin(ArduinoIoTPreferredConnection);","begin"],
+  ["}",""],
+  ["",""],
+  ["void loop() {","loop"],
+  ["  ArduinoCloud.update();   // synchronisation","update"],
+  ["}",""],
+  ["",""],
+  ["void onLedChange() {","cb"],
+  ["  if (led) {","if"],
+  ["    digitalWrite(LED_PIN, HIGH);","high"],
+  ["  } else {","else"],
+  ["    digitalWrite(LED_PIN, LOW);","low"],
+  ["  }",""],
+  ["  etat_led = digitalRead(LED_PIN);","read"],
+  ["}",""]
+];
+const codeEl = $("code");
+CODE.forEach(([t,k])=>{
+  const s=document.createElement("span"); s.dataset.k=k;
+  const i=t.indexOf("//");
+  if(i>=0){ s.textContent=t.slice(0,i); const c=document.createElement("em"); c.className="cm"; c.style.fontStyle="normal"; c.textContent=t.slice(i); s.appendChild(c); }
+  else s.textContent=t||" ";
+  codeEl.appendChild(s);
+});
+function hl(keys){
+  keys = keys||[];
+  codeEl.querySelectorAll("span[data-k]").forEach(s=>s.classList.toggle("on", !!s.dataset.k && keys.includes(s.dataset.k)));
+  const first = codeEl.querySelector("span.on");
+  if(first){ const top = first.offsetTop - codeEl.clientHeight/2; codeEl.scrollTo({top:Math.max(0,top),behavior:reduced?"auto":"smooth"}); }
+}
+
+/* ---------- geometry ---------- */
+const NODES = [
+  {id:"dash", t:"Tableau de bord", s:"ordinateur ou smartphone"},
+  {id:"cloud",t:"Arduino Cloud",   s:"plateforme IoT"},
+  {id:"ap",   t:"Point d'accès Wi-Fi", s:"box ou partage de connexion"},
+  {id:"esp",  t:"ESP32",           s:"objet connecté"},
+  {id:"led",  t:"LED",             s:"actionneur"}
+];
+const LINKS = ["Internet","Internet","Wi-Fi 2,4 GHz","GPIO 26 · 220 Ω"];
+let G;
+function geom(vertical){
+  if(!vertical){
+    const xs=[95,300,505,725,935];
+    return {vertical, w:1010, h:330, half:64, lane:20,
+      c: xs.map(x=>({x, y:140})),
+      off:(p,k)=>({x:p.x, y:p.y + (k==="ret"? G.lane : -G.lane)}),
+      nlab:p=>({x:p.x, y:p.y+86, a:"middle", dy:18}),
+      llab:(a,b)=>({x:(a.x+b.x)/2, y:a.y-40, a:"middle"}),
+      along:(p,d)=>({x:p.x+d, y:p.y}) };
+  }
+  const ys=[85,305,525,745,955];
+  return {vertical, w:420, h:1040, half:62, lane:20,
+    c: ys.map(y=>({x:115, y})),
+    off:(p,k)=>({x:p.x + (k==="ret"? G.lane : -G.lane), y:p.y}),
+    nlab:p=>({x:205, y:p.y-4, a:"start", dy:18}),
+    llab:(a,b)=>({x:160, y:(a.y+b.y)/2+4, a:"start"}),
+    along:(p,d)=>({x:p.x, y:p.y+d}) };
+}
+function el(tag, attrs, parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(parent, x, y, s, cls, anchor){
+  const t=el("text",{x,y,class:cls,"text-anchor":anchor||"middle"},parent); t.textContent=s; return t;
+}
+
+/* ---------- icons (centered at 0,0) ---------- */
+function iconDash(g){
+  el("rect",{x:-34,y:-54,width:68,height:108,rx:11,class:"dev-body"},g);
+  el("rect",{x:-27,y:-44,width:54,height:84,rx:4,class:"screen"},g);
+  txt(g,0,-31,"Commande_LED","tiny");
+  const sw=el("g",{id:"dashSw",transform:"translate(-14,-24)"},g);
+  el("rect",{x:0,y:0,width:28,height:14,rx:7,class:"sw-track"},sw);
+  el("circle",{cx:7,cy:7,r:5.2,class:"sw-knob"},sw);
+  txt(g,0,1,"led","tiny");
+  const v=el("g",{id:"dashVoy"},g);
+  el("circle",{cx:0,cy:15,r:8,class:"voy"},v);
+  txt(g,0,33,"etat_led","tiny");
+  el("circle",{cx:0,cy:47,r:3,fill:"none",stroke:"currentColor",class:"tiny"},g);
+  txt(g,0,70,"","mismatch").id="mismatch";
+}
+function iconCloud(g){
+  el("path",{d:"M -46 24 H 44 A 24 24 0 0 0 42 -22 A 34 34 0 0 0 -20 -30 A 30 30 0 0 0 -46 24 Z",class:"cloud"},g);
+  txt(g,0,6,"Arduino Cloud","cloud-t");
+  txt(g,0,19,"led · etat_led","tiny");
+}
+function iconAP(g){
+  const a=el("g",{id:"apIcon",class:"ap"},g);
+  const arcs=el("g",{},a);
+  [9,17,25].forEach(r=>el("path",{d:`M ${-r} -16 A ${r} ${r} 0 0 1 ${r} -16`,class:"arc"},arcs));
+  el("line",{x1:-26,y1:4,x2:-34,y2:-30,class:"ant"},a);
+  el("line",{x1:26,y1:4,x2:34,y2:-30,class:"ant"},a);
+  el("rect",{x:-42,y:2,width:84,height:28,rx:6,class:"router"},a);
+  [-24,-14,-4].forEach(x=>el("circle",{cx:x,cy:16,r:2.6,class:"rled"},a));
+  txt(a,20,20,"Wi-Fi","tiny");
+}
+function iconESP(g){
+  const b=el("g",{id:"espIcon"},g);
+  el("rect",{x:-58,y:-9,width:10,height:18,rx:2,class:"usb"},b);
+  el("rect",{x:-50,y:-34,width:100,height:68,rx:5,class:"pcb"},b);
+  for(let x=-42;x<=42;x+=8){ el("circle",{cx:x,cy:-28,r:1.8,class:"pin"},b); el("circle",{cx:x,cy:28,r:1.8,class:"pin"},b); }
+  el("rect",{x:-12,y:-20,width:50,height:38,rx:2,class:"shield"},b);
+  txt(b,13,3,"ESP32","chip-t");
+  el("path",{d:"M 40 -20 v 8 h 6 v 6 h -6 v 6 h 6 v 6 h -6 v 8",class:"meander"},b);
+  el("circle",{cx:-38,cy:14,r:3.4,class:"esp-led"},b);
+  txt(b,-30,-10,"GPIO","tiny").setAttribute("fill","#DDE5EC");
+}
+function iconLED(g){
+  const l=el("g",{id:"ledIcon"},g);
+  el("circle",{cx:0,cy:-6,r:42,fill:"url(#glow)",class:"led-glow"},l);
+  el("line",{x1:-6,y1:14,x2:-6,y2:44,class:"leg"},l);
+  el("line",{x1:6,y1:14,x2:6,y2:38,class:"leg"},l);
+  el("path",{d:"M -13 10 V -8 A 13 13 0 0 1 13 -8 V 10 Z",class:"led-dome"},l);
+  el("rect",{x:-16,y:9,width:32,height:5,rx:1.5,class:"led-rim"},l);
+}
+const ICON={dash:iconDash,cloud:iconCloud,ap:iconAP,esp:iconESP,led:iconLED};
+
+let layers={};
+function build(){
+  const vertical = svg.clientWidth < 640;
+  if(vertical===S.vertical) return;
+  S.vertical=vertical; G=geom(vertical);
+  svg.setAttribute("viewBox",`0 0 ${G.w} ${G.h}`);
+  svg.innerHTML="";
+  const defs=el("defs",{},svg);
+  const rg=el("radialGradient",{id:"glow"},defs);
+  el("stop",{offset:"0%","stop-color":"var(--led)","stop-opacity":"0.55"},rg);
+  el("stop",{offset:"100%","stop-color":"var(--led)","stop-opacity":"0"},rg);
+  const mk=(id,cls)=>{ const m=el("marker",{id,viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs); el("path",{d:"M0,0 L10,5 L0,10 z",class:cls},m); };
+  mk("aCmd","arrow-cmd"); mk("aRet","arrow-ret");
+
+  layers.links=el("g",{},svg); layers.nodes=el("g",{},svg); layers.pk=el("g",{},svg);
+  const C=G.c;
+  // communication links 0..2
+  for(let i=0;i<3;i++){
+    const a=C[i], b=C[i+1];
+    const g=el("g",{class:i===2?"wifi-link":"",id:i===2?"wifiLink":""},layers.links);
+    const a1=G.along(a,G.half), b1=G.along(b,-G.half);
+    const ca=G.off(a1,"cmd"), cb=G.off(b1,"cmd"), ra=G.off(a1,"ret"), rb=G.off(b1,"ret");
+    el("line",{x1:ca.x,y1:ca.y,x2:cb.x,y2:cb.y,class:"lane-cmd","marker-end":"url(#aCmd)"},g);
+    el("line",{x1:rb.x,y1:rb.y,x2:ra.x,y2:ra.y,class:"lane-ret","marker-end":"url(#aRet)"},g);
+    const L=G.llab(a,b); txt(g,L.x,L.y,LINKS[i],"l-label",L.a);
+    if(i===2){ const m={x:(a1.x+b1.x)/2,y:(a1.y+b1.y)/2}; const t=txt(g,m.x,m.y+9,"✕","cut"); t.id="wifiCut"; t.style.display="none"; }
+  }
+  // wire ESP -> LED
+  {
+    const a=G.along(C[3],G.half-6), b=G.along(C[4],-18);
+    const g=el("g",{},layers.links);
+    el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"wire"},g);
+    el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"flow",id:"flow"},g);
+    const m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+    const r=el("g",{transform:`translate(${m.x},${m.y}) rotate(${G.vertical?90:0})`},g);
+    el("rect",{x:-15,y:-6,width:30,height:12,rx:4,class:"res-body"},r);
+    [["-8","#C62828"],["-3","#C62828"],["2","#6D4C2F"],["9","#C9A227"]].forEach(([x,c])=>el("rect",{x,y:-6,width:3,height:12,fill:c},r));
+    const L=G.llab(C[3],C[4]); txt(g,L.x,L.y,LINKS[3],"l-label",L.a);
+  }
+  // nodes
+  NODES.forEach((n,i)=>{
+    const p=C[i];
+    const g=el("g",{class:"node",id:"n-"+n.id,transform:`translate(${p.x},${p.y})`},layers.nodes);
+    el("rect",{x:-64,y:-66,width:128,height:132,rx:14,class:"halo"},g);
+    ICON[n.id](g);
+    const L=G.nlab(p);
+    txt(layers.nodes,L.x,L.y,n.t,"n-label",L.a);
+    txt(layers.nodes,L.x,L.y+L.dy,n.s,"n-sub",L.a);
+    if(n.id==="dash"){
+      g.classList.add("dash-hit"); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+      g.setAttribute("aria-label","Actionner l'interrupteur du tableau de bord");
+      g.addEventListener("click",()=>{ if(!S.busy) toggleLed(); });
+      g.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ")&&!S.busy){ e.preventDefault(); toggleLed(); }});
+    }
+  });
+  render();
+}
+
+/* ---------- render state ---------- */
+function render(){
+  const q=id=>svg.querySelector("#"+id);
+  q("dashSw")?.classList.toggle("sw-on",S.cloudLed);
+  q("dashVoy")?.classList.toggle("voy-on",S.cloudEtat);
+  q("ledIcon")?.classList.toggle("led-on",S.pin);
+  q("flow")?.classList.toggle("on",S.pin);
+  q("espIcon")?.classList.toggle("online",S.online);
+  q("apIcon")?.classList.toggle("off",!S.wifi);
+  q("wifiLink")?.classList.toggle("off",!S.wifi);
+  const cut=q("wifiCut"); if(cut) cut.style.display=S.wifi?"none":"";
+  const mm=q("mismatch"); if(mm) mm.textContent = (!S.busy && S.cloudLed!==S.cloudEtat) ? "commande ≠ état réel" : "";
+
+  const setPill=(id,label,val,cls)=>{ const p=$(id); p.className="pill "+(cls||""); p.innerHTML=label+" : <b>"+val+"</b>"; };
+  setPill("stBoard","Carte", !S.booted?"éteinte":(S.online?"Online":"Offline"), !S.booted?"":(S.online?"ok":"bad"));
+  setPill("stWifi","Wi-Fi", S.wifi?"actif":"coupé", S.wifi?"ok":"bad");
+  setPill("stLed","LED", S.pin?"allumée":"éteinte", S.pin?"ok":"");
+
+  setVar("vLed", String(S.cloudLed)); setVar("vEtat", String(S.cloudEtat));
+  setVar("vPin", S.pin?"3,3 V (HIGH)":"0 V (LOW)");
+  setVar("vConn", !S.booted?"carte éteinte":(S.online?"Online":"Offline"));
+
+  $("bootBtn").disabled = S.busy || S.booted;
+  $("bootBtn").textContent = S.booted ? "Carte démarrée" : "1. Démarrer la carte";
+  $("ledBtn").disabled = S.busy;
+  $("ledBtn").setAttribute("aria-pressed", String(S.cloudLed));
+  $("ledBtnTxt").textContent = S.cloudLed ? "2. Éteindre la LED" : "2. Allumer la LED";
+  $("wifiBtn").disabled = S.busy;
+  $("wifiBtn").setAttribute("aria-pressed", String(S.wifi));
+  $("wifiBtn").textContent = S.wifi ? "3. Couper le Wi-Fi" : "3. Rétablir le Wi-Fi";
+}
+const lastVals={};
+function setVar(id,v){
+  const box=$(id), c=box.querySelector("code");
+  if(lastVals[id]!==undefined && lastVals[id]!==v){ box.classList.remove("flash"); void box.offsetWidth; box.classList.add("flash"); }
+  lastVals[id]=v; c.textContent=v;
+}
+function active(id){ svg.querySelectorAll(".node").forEach(n=>n.classList.toggle("active", n.id==="n-"+id)); }
+function apPulse(on){ svg.querySelector("#apIcon")?.classList.toggle("pulse",on && S.wifi); }
+
+/* ---------- timing & narration ---------- */
+let nextResolve=null;
+const speed=()=>parseFloat($("speed").value)||1;
+class Abort extends Error{}
+function check(tok){ if(tok!==S.token) throw new Abort(); }
+function wait(ms,tok){
+  return new Promise(res=>{
+    if($("stepMode").checked){
+      nextResolve=res; $("nextBtn").disabled=false; $("nextBtn").focus({preventScroll:true});
+    } else setTimeout(res, ms/speed());
+  }).then(()=>check(tok));
+}
+function scenario(name){
+  $("scenario").textContent="Scénario : "+name; $("steps").innerHTML="";
+}
+function say(text,opts){
+  opts=opts||{};
+  const ol=$("steps");
+  ol.querySelectorAll("li.current").forEach(li=>li.classList.remove("current"));
+  const li=document.createElement("li"); li.innerHTML=text; li.className="current"+(opts.alert?" alert":"");
+  ol.appendChild(li);
+  hl(opts.code); if(opts.node!==undefined) active(opts.node);
+}
+
+/* ---------- packets ---------- */
+function pointAt(i,kind){ return G.off(G.c[i],kind); }
+function movePacket(from,to,label,kind,tok,failFrac){
+  const a=pointAt(from,kind==="sys"?"cmd":kind), b=pointAt(to,kind==="sys"?"cmd":kind);
+  const g=el("g",{class:"pk-"+kind},layers.pk);
+  const w=label.length*7+16;
+  const above = G.vertical ? null : (kind==="ret"? 1 : -1);
+  let px,py,anchor;
+  if(!G.vertical){ px=-w/2; py= above<0 ? -34 : 14; }
+  else { px= (kind==="ret") ? 14 : -w-14; py=-10; }
+  el("rect",{x:px,y:py,width:w,height:20,rx:10,class:"pk-pill"},g);
+  txt(g,px+w/2,py+14,label,"pk-t");
+  el("circle",{r:7.5,class:"pk-dot-"+kind},g);
+  const dist=Math.hypot(b.x-a.x,b.y-a.y);
+  const end = failFrac==null ? 1 : failFrac;
+  const dur = reduced ? 1 : (dist*end)/(0.28*speed());
+  return new Promise(res=>{
+    const t0=performance.now();
+    function step(now){
+      if(tok!==S.token){ g.remove(); return res(); }
+      const k=Math.min(1,(now-t0)/dur)*end;
+      const e = k<0.5? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+      const x=a.x+(b.x-a.x)*(failFrac==null?e:k), y=a.y+(b.y-a.y)*(failFrac==null?e:k);
+      g.setAttribute("transform",`translate(${x},${y})`);
+      if(k<end) requestAnimationFrame(step);
+      else {
+        if(failFrac!=null){ txt(g,0,9,"✕","cut"); setTimeout(()=>{ g.remove(); res(); }, reduced?600:900/speed()); }
+        else { setTimeout(()=>{ g.remove(); res(); }, reduced?350:120); }
+      }
+    }
+    requestAnimationFrame(step);
+  }).then(()=>check(tok));
+}
+
+/* ---------- scenarios ---------- */
+async function run(fn){
+  if(S.busy) return;
+  S.busy=true; render(); const tok=S.token;
+  try{ await fn(tok); }
+  catch(e){ if(!(e instanceof Abort)) console.error(e); }
+  finally{
+    if(tok===S.token){ S.busy=false; active(null); apPulse(false); $("nextBtn").disabled=true; render(); }
+  }
+}
+
+async function connect(tok){
+  say("L'ESP32 cherche le réseau Wi-Fi et envoie le <b>nom du réseau (SSID)</b> et le <b>mot de passe</b> au point d'accès.",{code:["begin"],node:"esp"});
+  if(!S.wifi){
+    await movePacket(3,2,"SSID + mot de passe","sys",tok,0.55);
+    say("Aucun réseau Wi-Fi trouvé : la carte reste <b>Offline</b> et réessaie tant que le Wi-Fi est coupé.",{alert:true,node:"esp"});
+    await wait(1600,tok); return false;
+  }
+  apPulse(true);
+  await movePacket(3,2,"SSID + mot de passe","sys",tok);
+  say("Le point d'accès accepte la connexion : la carte fait maintenant partie du réseau local et peut accéder à Internet.",{node:"ap"});
+  await movePacket(2,3,"connexion OK","sys",tok);
+  await wait(900,tok);
+  say("La carte contacte Arduino Cloud et s'<b>authentifie</b> avec son <b>Device ID</b> et sa <b>Secret Key</b> (clé secrète).",{code:["begin"],node:"esp"});
+  await movePacket(3,1,"Device ID + Secret Key","sys",tok);
+  say("Arduino Cloud reconnaît la carte : elle passe <b>Online</b>. Les échanges entre la carte et le cloud sont chiffrés.",{node:"cloud"});
+  await movePacket(1,3,"Online","sys",tok);
+  S.online=true; render(); apPulse(false);
+  await wait(1200,tok);
+  return true;
+}
+
+function boot(){
+  run(async tok=>{
+    scenario("démarrage de la carte");
+    S.booted=true; render();
+    say("La carte est alimentée par le câble USB : la fonction <b>setup()</b> s'exécute une fois. La broche 26 devient une sortie et la LED est éteinte.",{code:["setup"],node:"esp"});
+    await wait(2200,tok);
+    const ok=await connect(tok);
+    if(ok){
+      say("<b>loop()</b> tourne en continu : <b>ArduinoCloud.update()</b> synchronise sans arrêt la carte avec le cloud. La carte est prête à recevoir des commandes.",{code:["update"],node:"esp"});
+      await wait(1600,tok);
+      say("À vous : actionnez l'interrupteur (bouton « 2 » ou directement sur le téléphone).",{node:"dash"});
+    }
+  });
+}
+
+function toggleLed(){
+  const v=!S.cloudLed;
+  run(async tok=>{
+    scenario(v?"allumer la LED":"éteindre la LED");
+    say(`Vous actionnez l'interrupteur du tableau de bord : la variable <b>led</b> passe à <b>${v}</b>.`,{node:"dash",code:[]});
+    S.cloudLed=v; render();
+    await wait(1200,tok);
+    say("La commande part par Internet (4G/5G, fibre…) vers la plateforme Arduino Cloud.",{node:"dash"});
+    await movePacket(0,1,`led = ${v}`,"cmd",tok);
+    say(`Arduino Cloud enregistre la nouvelle valeur <b>led = ${v}</b> et cherche à la transmettre à la carte.`,{node:"cloud"});
+    await wait(1300,tok);
+    if(!S.online){
+      const why = !S.booted ? "La carte est éteinte" : "La carte est hors ligne (Wi-Fi coupé)";
+      await movePacket(1,3,`led = ${v}`,"cmd",tok, !S.booted?0.25:0.72);
+      say(`${why} : la commande reste dans le cloud. L'interrupteur a changé, mais <b>la LED ne change pas</b> et <b>le voyant d'état non plus</b>.`,{alert:true,node:"cloud"});
+      await wait(2200,tok);
+      return;
+    }
+    say("La commande repart par Internet jusqu'au point d'accès, qui la relaie en <b>Wi-Fi</b> jusqu'à l'ESP32.",{node:"ap"});
+    apPulse(true);
+    await movePacket(1,3,`led = ${v}`,"cmd",tok);
+    apPulse(false);
+    say("<b>ArduinoCloud.update()</b> reçoit la nouvelle valeur et appelle automatiquement la fonction <b>onLedChange()</b>.",{code:["update","cb"],node:"esp"});
+    await wait(1600,tok);
+    if(v){
+      say("<b>led</b> vaut true : <b>digitalWrite(LED_PIN, HIGH)</b>. La broche GPIO 26 passe à 3,3 V, le courant traverse la résistance de 220 Ω et <b>la LED s'allume</b>.",{code:["if","high"],node:"led"});
+    } else {
+      say("<b>led</b> vaut false : <b>digitalWrite(LED_PIN, LOW)</b>. La broche GPIO 26 passe à 0 V, le courant s'arrête et <b>la LED s'éteint</b>.",{code:["else","low"],node:"led"});
+    }
+    S.pin=v; render();
+    await wait(2000,tok);
+    say(`<b>etat_led = digitalRead(LED_PIN)</b> : la carte lit l'état réel de la broche et met à jour <b>etat_led = ${v}</b>.`,{code:["read"],node:"esp"});
+    await wait(1500,tok);
+    say("Le <b>retour d'état</b> remonte par le même chemin, dans l'autre sens : Wi-Fi, point d'accès, Internet, Arduino Cloud.",{node:"ap"});
+    apPulse(true);
+    await movePacket(3,1,`etat_led = ${v}`,"ret",tok);
+    apPulse(false);
+    S.cloudEtat=v; render();
+    await movePacket(1,0,`etat_led = ${v}`,"ret",tok);
+    say(`Le voyant du tableau de bord ${v?"s'allume":"s'éteint"} : il confirme ce que la carte a <b>réellement</b> fait.`,{node:"dash",code:[]});
+    await wait(1400,tok);
+  });
+}
+
+function toggleWifi(){
+  const on=!S.wifi;
+  run(async tok=>{
+    scenario(on?"retour du Wi-Fi":"coupure du Wi-Fi");
+    S.wifi=on; render();
+    if(!on){
+      say("Le point d'accès Wi-Fi est coupé : plus aucun message ne peut passer entre la carte et Internet.",{node:"ap",alert:true});
+      await wait(1600,tok);
+      if(S.booted){
+        S.online=false; render();
+        say("Après quelques secondes sans nouvelles, Arduino Cloud indique que la carte est <b>Offline</b>. Essayez maintenant d'actionner l'interrupteur.",{node:"esp",alert:true});
+        await wait(1600,tok);
+      }
+      return;
+    }
+    say("Le point d'accès Wi-Fi est de nouveau disponible.",{node:"ap"});
+    await wait(1200,tok);
+    if(S.booted){
+      const ok=await connect(tok);
+      if(ok){
+        say("La carte est de nouveau synchronisée avec le cloud. À vérifier pendant le TP : après la reconnexion, la LED prend-elle la dernière commande envoyée ?",{node:"esp",code:["update"]});
+        await wait(1500,tok);
+      }
+    }
+  });
+}
+
+function reset(){
+  S.token++; S.busy=false;
+  if(nextResolve){ const r=nextResolve; nextResolve=null; r(); }
+  layers.pk && (layers.pk.innerHTML="");
+  Object.assign(S,{booted:false,wifi:true,online:false,cloudLed:false,pin:false,cloudEtat:false});
+  $("scenario").textContent="Prêt";
+  $("steps").innerHTML='<li class="current">Cliquez sur « 1. Démarrer la carte » : l\'ESP32 va se connecter au Wi-Fi puis à Arduino Cloud.</li>';
+  hl([]); active(null); apPulse(false); $("nextBtn").disabled=true; render();
+}
+
+/* ---------- wiring ---------- */
+$("bootBtn").addEventListener("click",boot);
+$("ledBtn").addEventListener("click",toggleLed);
+$("wifiBtn").addEventListener("click",toggleWifi);
+$("resetBtn").addEventListener("click",reset);
+$("nextBtn").addEventListener("click",()=>{ if(nextResolve){ const r=nextResolve; nextResolve=null; $("nextBtn").disabled=true; r(); } });
+$("stepMode").addEventListener("change",e=>{
+  $("hint").innerHTML = e.target.checked ? "Cliquez sur <b>Étape suivante</b> pour avancer." : "Cochez <b>Pas à pas</b> pour avancer à votre rythme.";
+  if(!e.target.checked && nextResolve){ const r=nextResolve; nextResolve=null; $("nextBtn").disabled=true; r(); }
+});
+let rt; new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!S.busy) build(); },120); }).observe(svg.parentElement);
+build(); hl([]);
+})();
+</script>
+</body>
+</html>

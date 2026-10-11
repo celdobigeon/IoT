@@ -138,7 +138,7 @@ dialog#ask{border:1px solid var(--line);border-radius:14px;background:var(--surf
 </head>
 <body>
 <header class="top">
-  <div class="eyebrow">IdO / IoT · ESP32 serveur web · TP 03 et 08</div>
+  <div class="eyebrow">IoT · ESP32 serveur web · TP 03 et 08</div>
   <h1>Générateur de tableau de bord pour l'ESP32</h1>
   <p class="sub">Déclarez ce qui est branché sur la carte, puis composez le tableau de bord : pour chaque bloc, choisissez la valeur à afficher et sa forme (jauge, cadran, thermomètre, courbe…). L'aperçu fonctionne avec des mesures simulées. Téléchargez ensuite le programme Arduino complet : il n'y a rien à programmer.</p>
 </header>
@@ -959,7 +959,7 @@ function programme() {
   const autos = sorties.filter(S => S.auto && SS.find(A => A.key === S.comp.autoSrc)), commandes = sorties.filter(S => !S.auto);
   const lecture = entrees.length;
   const o = [];
-  o.push("// Tableau de bord fabriqué avec le générateur de page web ESP32 (TP IdO)", "// Carte : DOIT ESP32 DEVKIT V1", "// Branchements :");
+  o.push("// Tableau de bord fabriqué avec le générateur de page web ESP32 (TP IoT)", "// Carte : DOIT ESP32 DEVKIT V1", "// Branchements :");
   if (dht) o.push("//   - module DHT11 : S sur " + pinNom(dht.pin) + ", + sur 3V3, - sur GND");
   SS.filter(S => S.analog).forEach(S => o.push("//   - " + S.nom + " (entrée analogique) : signal sur " + pinNom(S.comp.pin) + ", alimentation 3V3 et GND"));
   SS.filter(S => S.bool && !S.sortie).forEach(S => o.push("//   - " + S.nom + " (entrée tout-ou-rien) sur " + pinNom(S.comp.pin) + (S.comp.cablage === "gnd" ? ", l'autre patte sur GND" : ", signal à 3,3 V quand il est actif")));

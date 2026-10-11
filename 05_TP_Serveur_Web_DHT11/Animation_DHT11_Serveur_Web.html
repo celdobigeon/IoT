@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DHT11 ESP32 serveur web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --surface2:#F5F8FA; --ink:#14283B; --muted:#586A7B; --line:#C8D2DB;
+  --cmd:#2B5FD6; --cmd-soft:#DCE6FB; --ret:#12845A; --ret-soft:#D6F0E4;
+  --copper:#B5652D; --warn:#B4400C; --warn-soft:#FCE6DA;
+  --pcb:#1F3A52; --chip:#BCC5CD; --codebg:#F3F6F8; --hl:#FFF1C9; --lan:#7C8FA3;
+  --dht:#3D86C6; --dht-dark:#245D91; --dht-pcb:#23303E;
+  --temp:#C2410C; --hum:#2B5FD6;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+    --cmd:#79A2FF; --cmd-soft:#1D2E52; --ret:#45C993; --ret-soft:#153A2C;
+    --copper:#DB8C50; --warn:#F2915A; --warn-soft:#3D2418;
+    --pcb:#284B69; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419; --lan:#5F7387;
+    --dht:#4F97D6; --dht-dark:#2C6AA3; --dht-pcb:#0B131B;
+    --temp:#FB8A4C; --hum:#79A2FF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+  --cmd:#79A2FF; --cmd-soft:#1D2E52; --ret:#45C993; --ret-soft:#153A2C;
+  --copper:#DB8C50; --warn:#F2915A; --warn-soft:#3D2418;
+  --pcb:#284B69; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419; --lan:#5F7387;
+  --dht:#4F97D6; --dht-dark:#2C6AA3; --dht-pcb:#0B131B;
+  --temp:#FB8A4C; --hum:#79A2FF;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 48px;display:grid;gap:18px}
+header{display:grid;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.intro{margin:0;max-width:74ch;color:var(--muted)}
+.intro a{color:var(--cmd)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:22px;height:0;border-top:3px dashed currentColor;display:inline-block}
+.legend .c{color:var(--cmd)} .legend .r{color:var(--ret)} .legend .w{color:var(--copper)} .legend .w i{border-top-style:solid}
+.legend b{color:var(--ink);font-weight:500}
+
+.controls{display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.controls .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.controls .row + .row{border-top:1px solid var(--line);padding-top:10px}
+.controls .sep{width:1px;align-self:stretch;background:var(--line)}
+button,select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:8px 13px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--cmd);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+#wifiBtn[aria-pressed="false"],#wireBtn[aria-pressed="false"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.toggle{display:inline-flex;align-items:center;gap:9px}
+.toggle .track{width:38px;height:22px;border-radius:11px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.toggle .track::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:left .2s}
+.toggle[aria-pressed="true"] .track{background:var(--ret)}
+.toggle[aria-pressed="true"] .track::after{left:19px}
+label.inline{display:inline-flex;align-items:center;gap:7px;font-size:14px;cursor:pointer}
+.air{display:inline-flex;align-items:center;gap:8px;font-size:14px}
+.air input[type=range]{width:130px;accent-color:var(--copper)}
+.air output{font-family:var(--mono);font-size:13px;min-width:52px}
+.air-title{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.spacer{flex:1}
+
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+#stage{width:100%;height:auto;display:block}
+.status{display:flex;flex-wrap:wrap;gap:8px;padding:4px 6px 6px}
+.pill{font-family:var(--mono);font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.pill b{font-weight:500;color:var(--ink)}
+.pill.ok{background:var(--ret-soft);border-color:var(--ret);color:var(--ret)} .pill.ok b{color:var(--ret)}
+.pill.bad{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)} .pill.bad b{color:var(--warn)}
+
+.panels{display:grid;grid-template-columns:1.05fr 1fr;gap:18px}
+@media (max-width:860px){.panels{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px;align-content:start;min-width:0}
+.panel h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+.panel h3{font-family:var(--display);font-weight:600;font-size:17px;margin:6px 0 0}
+.scenario{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#steps{margin:0;padding-left:24px;display:grid;gap:7px}
+#steps li{color:var(--muted)}
+#steps li.current{color:var(--ink);font-weight:500}
+#steps li.current::marker{color:var(--copper);font-weight:700}
+#steps li.alert{color:var(--warn)}
+#steps code{font-family:var(--mono);font-size:13px}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+.hint b{color:var(--ink)}
+.next-row{display:flex;gap:10px;align-items:center}
+pre.serial{margin:0;background:#0F1A24;color:#CFE3D4;border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.55;height:170px;overflow:auto;white-space:pre}
+pre.serial .err{color:#FF9C7A}
+pre.serial .sys{color:#8FA3B5}
+pre.code{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:12.5px;line-height:1.55;overflow:auto;max-height:470px}
+pre.code span{display:block;padding:0 14px;white-space:pre;border-left:3px solid transparent}
+pre.code span.on{background:var(--hl);border-left-color:var(--copper)}
+pre.code .cm{color:var(--muted);font-style:normal}
+.vars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.var{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.var small{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.var code{font-family:var(--mono);font-size:14px}
+.var.cmd code{color:var(--cmd)} .var.ret code{color:var(--ret)}
+.var.flash{animation:flash .9s ease}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--copper)}100%{box-shadow:0 0 0 0 transparent}}
+
+.webpage{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px}
+.webpage-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.webpage h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+.browser{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;color:#111}
+.browser-bar{display:flex;gap:8px;align-items:center;background:var(--surface2);border-bottom:1px solid var(--line);padding:6px 10px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.browser-bar .addr{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:3px 12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.browser-body{padding:12px 16px 14px;font-family:Arial,sans-serif;min-height:120px}
+.browser-body h3{margin:0 0 6px;font-size:22px}
+.browser-body h4{margin:10px 0 2px;font-size:16px}
+.browser-body p{margin:4px 0}
+.browser-body .gauges{display:flex;flex-wrap:wrap;gap:6px}
+.browser-body .gauges svg{width:200px;max-width:46%;height:auto}
+.browser-body .err{color:#c00;font-weight:bold}
+.browser-body a{color:#1a0dab;cursor:pointer;text-decoration:underline;background:none;border:0;padding:0;font:inherit}
+.browser-body a[aria-disabled="true"]{color:#888;cursor:not-allowed}
+.browser-empty{padding:34px 16px;text-align:center;font-family:var(--body);color:#667}
+.browser-empty.bad{color:#B4400C;font-weight:600}
+pre.csv{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;max-height:180px;overflow:auto;white-space:pre}
+.csv-t{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.compare{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px}
+.compare h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--display);font-weight:600;font-size:16px;background:var(--surface2)}
+tbody th{font-weight:600;width:22%}
+
+/* SVG */
+.n-label{font-family:var(--display);font-weight:600;font-size:17px;fill:var(--ink)}
+.n-sub{font-family:var(--body);font-size:12px;fill:var(--muted)}
+.l-label{font-family:var(--mono);font-size:11.5px;fill:var(--muted)}
+.lan-box{fill:none;stroke:var(--lan);stroke-width:1.5;stroke-dasharray:3 6}
+.lan-t{font-family:var(--mono);font-size:12px;fill:var(--lan)}
+.lane-cmd{stroke:var(--cmd);stroke-width:2;stroke-dasharray:6 6;fill:none;opacity:.55}
+.lane-ret{stroke:var(--ret);stroke-width:2;stroke-dasharray:6 6;fill:none;opacity:.55}
+.arrow-cmd{fill:var(--cmd);opacity:.7}.arrow-ret{fill:var(--ret);opacity:.7}
+.wlink.off .lane-cmd,.wlink.off .lane-ret{stroke:var(--line);opacity:1}
+.cut{font-family:var(--body);font-weight:700;font-size:26px;fill:var(--warn)}
+.wire{stroke:var(--copper);stroke-width:3;fill:none;stroke-linecap:round}
+.wire.off{stroke:var(--line);stroke-dasharray:4 5}
+.dev-body{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.g4 .dev-body{stroke-dasharray:5 4}
+.screen{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.url{fill:var(--surface2);stroke:var(--line);stroke-width:.8}
+.tiny{font-family:var(--mono);font-size:7px;fill:var(--muted)}
+.pg-title{font-family:var(--body);font-weight:600;font-size:7.5px;fill:var(--ink)}
+.pg-t{font-family:var(--display);font-weight:700;font-size:13px;fill:var(--temp)}
+.pg-h{font-family:var(--display);font-weight:700;font-size:10px;fill:var(--hum)}
+.pg-bar{fill:none;stroke:var(--ink);stroke-width:.8}
+.pg-spark-t{fill:none;stroke:var(--temp);stroke-width:1}
+.pg-spark-h{fill:none;stroke:var(--hum);stroke-width:1}
+.pg-err{font-family:var(--body);font-weight:600;font-size:7.5px;fill:var(--warn)}
+.pg-refresh{font-family:var(--mono);font-size:9px;font-weight:500;fill:var(--ret)}
+.badge4g{fill:var(--warn)} .badge4g-t{font-family:var(--mono);font-size:9px;font-weight:500;fill:#fff}
+.router{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ant{stroke:var(--ink);stroke-width:2.5;stroke-linecap:round}
+.arc{fill:none;stroke:var(--cmd);stroke-width:2.2;stroke-linecap:round}
+.ap.off .arc{stroke:var(--line)}
+.ap.pulse .arc{animation:pulse .9s ease-in-out infinite}
+.ap.pulse .arc:nth-child(2){animation-delay:.15s}.ap.pulse .arc:nth-child(3){animation-delay:.3s}
+@keyframes pulse{50%{opacity:.2}}
+.rled{fill:var(--ret)} .ap.off .rled{fill:var(--warn)}
+.pcb{fill:var(--pcb)} .shield{fill:var(--chip)} .chip-t{font-family:var(--mono);font-size:9px;font-weight:500;fill:#1B2833}
+.pin{fill:var(--copper)} .meander{stroke:var(--copper);stroke-width:1.6;fill:none}
+.usb{fill:var(--chip)}
+.esp-led{fill:#6B7885;transition:fill .3s} .online .esp-led{fill:#3FE09A}
+.ip-t{font-family:var(--mono);font-size:10.5px;font-weight:500;fill:var(--ret)}
+.dht-pcb{fill:var(--dht-pcb)} .dht-body{fill:var(--dht);stroke:var(--dht-dark);stroke-width:1.5}
+.dht-hole{fill:var(--dht-dark)} .dht-leg{stroke:#9AA5AF;stroke-width:2.5}
+.dht-pin{font-family:var(--mono);font-size:8px;font-weight:500;fill:#fff}
+.airwave{fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;opacity:.55}
+.blowing .airwave{stroke:var(--hum);opacity:1;animation:wave .6s ease-in-out infinite}
+.blowing .airwave:nth-child(2){animation-delay:.12s}.blowing .airwave:nth-child(3){animation-delay:.24s}
+@keyframes wave{50%{transform:translateX(-5px)}}
+.air-t{font-family:var(--mono);font-size:11.5px;font-weight:500;fill:var(--copper)}
+.node.active .halo{opacity:1}
+.halo{fill:none;stroke:var(--copper);stroke-width:2;stroke-dasharray:4 5;opacity:0;transition:opacity .25s}
+.pk-dot-cmd{fill:var(--cmd)} .pk-dot-ret{fill:var(--ret)} .pk-dot-sys{fill:var(--copper)}
+.pk-pill{fill:var(--surface);stroke-width:1.5}
+.pk-cmd .pk-pill{stroke:var(--cmd)} .pk-ret .pk-pill{stroke:var(--ret)} .pk-sys .pk-pill{stroke:var(--copper)}
+.pk-t{font-family:var(--mono);font-size:11.5px;fill:var(--ink)}
+@media (prefers-reduced-motion: reduce){.ap.pulse .arc,.blowing .airwave{animation:none}}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">TP IoT · ESP32 serveur web + DHT11</div>
+    <h1>Lire la température et l'humidité sur une page web hébergée par l'ESP32</h1>
+    <p class="intro">Pas de cloud ici : l'ESP32 mesure l'air avec le DHT11 toutes les 5 s et garde en mémoire la <b>dernière mesure</b> et un <b>historique</b> de 30 minutes. Quand le navigateur du téléphone lui envoie une requête HTTP, la carte répond par une page avec deux jauges et les courbes de l'historique. La page demande au navigateur de la <b>recharger toutes les 5 s</b>, et l'historique peut être téléchargé en <b>fichier CSV</b>. À comparer avec <a href="../05_1_TP_Arduino_Cloud_DHT11/Animation_DHT11_Arduino_Cloud.html">la version Arduino Cloud</a> et avec <a href="../04_TP_Serveur_Web_LED/Animation_LED_Serveur_Web.html">le serveur web de la LED</a>.</p>
+    <div class="legend" aria-label="Légende">
+      <span class="c"><i></i><b>Requête HTTP</b>&nbsp;navigateur → carte</span>
+      <span class="r"><i></i><b>Réponse</b>&nbsp;page HTML (carte → navigateur) ou mesure (capteur → carte)</span>
+      <span class="w"><i></i><b>Fil DATA</b>&nbsp;D4 ↔ broche S du module (demande de mesure)</span>
+    </div>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="Commandes de l'animation">
+    <div class="row">
+      <button id="bootBtn" class="primary">1. Démarrer la carte</button>
+      <button id="pageBtn">2. Ouvrir la page</button>
+      <button id="measBtn">3. Mesure suivante</button>
+      <button id="autoBtn" class="toggle" aria-pressed="false"><span class="track" aria-hidden="true"></span><span>4. Laisser la page ouverte</span></button>
+      <button id="blowBtn">5. Souffler sur le capteur</button>
+      <button id="wireBtn" aria-pressed="true">6. Débrancher le fil DATA</button>
+      <button id="wifiBtn" aria-pressed="true">7. Couper le Wi-Fi</button>
+      <label class="inline"><input type="checkbox" id="g4"> Téléphone en 4G</label>
+      <button id="csvBtn">8. Télécharger le CSV</button>
+    </div>
+    <div class="row">
+      <span class="air-title">Air de la salle</span>
+      <label class="air" for="airT">Température <input type="range" id="airT" min="10" max="40" step="0.5" value="22.5"><output id="airTo" for="airT">22,5 °C</output></label>
+      <label class="air" for="airH">Humidité <input type="range" id="airH" min="15" max="95" step="1" value="48"><output id="airHo" for="airH">48 %</output></label>
+      <span class="sep" aria-hidden="true"></span>
+      <label class="inline"><input type="checkbox" id="stepMode"> Pas à pas</label>
+      <label class="inline" for="speed">Vitesse
+        <select id="speed"><option value="0.6">Lente</option><option value="1" selected>Normale</option><option value="1.8">Rapide</option></select>
+      </label>
+      <span class="spacer"></span>
+      <button id="resetBtn">Recommencer</button>
+    </div>
+  </div>
+
+  <div class="stage-card">
+    <svg id="stage" role="img" aria-label="Réseau local : téléphone avec navigateur, point d'accès Wi-Fi, carte ESP32 serveur web et capteur DHT11"></svg>
+    <div class="status" aria-live="polite">
+      <span class="pill" id="stBoard">Carte : <b>éteinte</b></span>
+      <span class="pill ok" id="stWifi">Wi-Fi : <b>actif</b></span>
+      <span class="pill ok" id="stPhone">Téléphone : <b>Wi-Fi local</b></span>
+      <span class="pill ok" id="stWire">Fil DATA : <b>branché</b></span>
+      <span class="pill" id="stAuto">Page ouverte : <b>non</b></span>
+      <span class="pill" id="stTime">Temps écoulé : <b>0 s</b></span>
+    </div>
+  </div>
+
+  <section class="webpage" aria-labelledby="hWeb">
+    <div class="webpage-head"><h2 id="hWeb">Page affichée par le navigateur du téléphone</h2><span class="pill" id="webStatus">aucune page</span></div>
+    <div class="browser">
+      <div class="browser-bar"><span aria-hidden="true">⟳</span><span class="addr" id="webAddr">saisir l'adresse…</span></div>
+      <div id="webBody"><div class="browser-empty">Aucune page ouverte : démarrez la carte, puis cliquez sur « 2. Ouvrir la page ».</div></div>
+    </div>
+    <div class="csv-t" id="csvTitle">Fichier mesures.csv : pas encore téléchargé</div>
+    <pre class="csv" id="csvView" aria-label="Contenu du fichier CSV">—</pre>
+  </section>
+
+  <div class="panels">
+    <section class="panel" aria-labelledby="hSteps">
+      <div class="scenario" id="scenario">Prêt</div>
+      <h2 id="hSteps">Ce qui se passe</h2>
+      <ol id="steps" aria-live="polite">
+        <li class="current">Cliquez sur « 1. Démarrer la carte » : l'ESP32 va démarrer le capteur, se connecter au Wi-Fi et démarrer son serveur web.</li>
+      </ol>
+      <div class="next-row">
+        <button id="nextBtn" disabled>Étape suivante →</button>
+        <p class="hint" id="hint">Cochez <b>Pas à pas</b> pour avancer à votre rythme.</p>
+      </div>
+      <h3>Moniteur série (115200 bauds)</h3>
+      <pre class="serial" id="serial" aria-label="Moniteur série"></pre>
+    </section>
+
+    <section class="panel" aria-labelledby="hCode">
+      <h2 id="hCode">Code exécuté sur l'ESP32</h2>
+      <pre class="code" id="code"></pre>
+      <div class="vars">
+        <div class="var" id="vIp"><small>Carte · adresse IP</small><code>—</code></div>
+        <div class="var" id="vLast"><small>Carte · dernière mesure</small><code>—</code></div>
+        <div class="var ret" id="vT"><small>Carte · temperature</small><code>0.00</code></div>
+        <div class="var ret" id="vH"><small>Carte · humidite</small><code>0.00</code></div>
+        <div class="var" id="vErr"><small>Carte · erreur_capteur</small><code>true</code></div>
+        <div class="var ret" id="vNb"><small>Carte · nbMesures (historique)</small><code>0</code></div>
+        <div class="var cmd" id="vPage"><small>Téléphone · page affichée</small><code>aucune</code></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="compare" aria-labelledby="hCmp">
+    <h2 id="hCmp">Arduino Cloud ou serveur web ?</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th></th><th>Arduino Cloud (TP DHT11 précédent)</th><th>Serveur web sur l'ESP32 (ce TP)</th></tr></thead>
+        <tbody>
+          <tr><th>Qui prend l'initiative ?</th><td>La carte <b>envoie</b> ses mesures au cloud toutes les 10 s</td><td>Le navigateur <b>demande</b> la page toutes les 5 s ; la carte ne fait que répondre</td></tr>
+          <tr><th>Historique</th><td>Enregistré par le cloud, sur de longues durées</td><td>Gardé dans la mémoire de la carte : 30 min au maximum, effacé si la carte redémarre</td></tr>
+          <tr><th>Récupérer les données</th><td>Export depuis la plateforme</td><td>Fichier CSV téléchargé à l'adresse /mesures.csv (seulement depuis le réseau local)</td></tr>
+          <tr><th>D'où consulter ?</th><td>De partout, avec une connexion Internet</td><td>Seulement depuis le réseau local (même Wi-Fi)</td></tr>
+          <tr><th>Plusieurs téléphones</th><td>Ils lisent tous la valeur stockée dans le cloud</td><td>Chacun envoie ses propres requêtes à la carte ; elle mesure toujours toutes les 5 s</td></tr>
+          <tr><th>Si la carte est hors ligne</th><td>Le tableau de bord garde la dernière valeur reçue</td><td>La page est inaccessible</td></tr>
+          <tr><th>Sécurité</th><td>Compte, clé secrète de la carte, échanges chiffrés</td><td>Dans ce code simple : pas de mot de passe, HTTP non chiffré</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <footer>Animation simplifiée : le temps est accéléré. L'adresse IP 192.168.1.42 est un exemple : la vraie adresse s'affiche dans le moniteur série. Le capteur simulé arrondit au degré et au pour cent, avec un petit décalage, comme un vrai DHT11 (précision ± 2 °C et ± 5 %).</footer>
+</div>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("stage");
+const $=id=>document.getElementById(id);
+const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const IP="192.168.1.42";
+const NB_MAX=360;                          // comme dans le programme : 360 mesures = 30 min
+const fr=(v,d)=>v.toFixed(d).replace(".",",");
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+const S={booted:false, wifi:true, connected:false, server:false, g4:false, wire:true, auto:false,
+         busy:false, token:0, qtok:0, vertical:null,
+         base:{t:22.5,h:48}, blow:{t:0,h:0}, noise:{t:0,h:0}, sens:null,
+         time:0, lastMeas:null, board:{t:0,h:0,err:true}, hist:[], csv:null,
+         page:null, pageErr:false};
+
+/* ---------- modèle physique simplifié ---------- */
+function air(){ return {t:S.base.t+S.blow.t+S.noise.t, h:clamp(S.base.h+S.blow.h+S.noise.h,5,98)}; }
+function advanceAir(){
+  S.noise={t:(Math.random()-0.5)*0.4, h:(Math.random()-0.5)*1.4};
+  const a=air();
+  if(!S.sens) S.sens={t:a.t,h:a.h};
+  S.sens.t+=(a.t-S.sens.t)*0.6;           // le capteur suit l'air avec un peu de retard
+  S.sens.h+=(a.h-S.sens.h)*0.6;
+  S.blow.t*=0.55; S.blow.h*=0.55;         // l'effet du souffle se dissipe
+}
+function sensorValue(){
+  const s=S.sens||air();
+  return {t:clamp(Math.round(s.t+0.6),0,50), h:clamp(Math.round(s.h-1.5),20,90)};
+}
+
+/* ---------- code ---------- */
+const CODE=[
+ ["#include <WiFi.h>","inc"],
+ ["#include <WebServer.h>","inc"],
+ ["#include <DHT.h>","inc"],
+ ["",""],
+ ['const char* ssid = "NOM_DU_RESEAU";',"id"],
+ ['const char* password = "MOT_DE_PASSE";',"id"],
+ ["",""],
+ ["const int DHT_PIN = 4;           // broche D4","pin"],
+ ["DHT dht(DHT_PIN, DHT11);","pin"],
+ ["WebServer server(80);            // port 80",""],
+ ["",""],
+ ["float temperature = 0;","vars"],
+ ["float humidite = 0;","vars"],
+ ["bool erreur_capteur = true;","vars"],
+ ["unsigned long derniereMesure = 0;","vars"],
+ ["const unsigned long PERIODE = 5000;","vars"],
+ ["",""],
+ ["const int NB_MAX = 360;          // 360 x 5 s = 30 min","hist"],
+ ["float histT[NB_MAX];","hist"],
+ ["float histH[NB_MAX];","hist"],
+ ["unsigned long histTemps[NB_MAX];","hist"],
+ ["int nbMesures = 0;","hist"],
+ ["",""],
+ ["void enregistrer(float t, float h) {","enr"],
+ ["  if (nbMesures == NB_MAX) { ... } // plein : oublier la plus ancienne","enrFull"],
+ ["  histT[nbMesures] = t;","enr"],
+ ["  histH[nbMesures] = h;","enr"],
+ ["  histTemps[nbMesures] = millis() / 1000;","enr"],
+ ["  nbMesures++;","enr"],
+ ["}","enr"],
+ ["",""],
+ ["void mesurer() {","mes"],
+ ["  float t = dht.readTemperature();","read"],
+ ["  float h = dht.readHumidity();","read"],
+ ["  if (isnan(t) || isnan(h)) {","nan"],
+ ["    erreur_capteur = true;","errT"],
+ ['    Serial.println("Erreur de lecture du DHT11 !");',"errT"],
+ ["  } else {","ok"],
+ ["    erreur_capteur = false;","ok"],
+ ["    temperature = t;","assign"],
+ ["    humidite = h;","assign"],
+ ["    enregistrer(t, h);","enrCall"],
+ ['    Serial.print("Temperature : "); ...',"print"],
+ ["  }",""],
+ ["}",""],
+ ["",""],
+ ["String jauge(...) { ... }        // dessine une jauge (SVG)","gfx"],
+ ["String courbe() { ... }          // dessine l'historique (SVG)","gfx"],
+ ["",""],
+ ["String page() {","page"],
+ ["  String html = \"<!DOCTYPE html>...<meta charset='utf-8'>\";","page"],
+ ["  html += \"<meta http-equiv='refresh' content='5'>\"; // recharger toutes les 5 s","refresh"],
+ ["  html += \"<h1>Station météo</h1>\";","page"],
+ ["  if (erreur_capteur) {","pgerr"],
+ ["    html += \"<p>Erreur de lecture du DHT11 !</p>\";","pgerr"],
+ ["  } else {","pgval"],
+ ["    html += jauge(\"Température\", temperature, 0, 50, ...);","pgval"],
+ ["    html += jauge(\"Humidité\", humidite, 0, 100, ...);","pgval"],
+ ["  }","page"],
+ ["  html += \"<p>Dernière mesure il y a \" + ... + \" s</p>\";","pgage"],
+ ["  html += courbe();                // historique","pgcurve"],
+ ["  html += \"<a href='/mesures.csv'>Télécharger...</a>\";","pgcurve"],
+ ["  return html;","page"],
+ ["}","page"],
+ ["",""],
+ ["void handleRoot() {","root"],
+ ['  server.send(200, "text/html; charset=utf-8", page());',"root"],
+ ["}",""],
+ ["",""],
+ ["void handleCSV() {","csv"],
+ ['  String csv = "temps (s);temperature (°C);humidite (%)\\n";',"csv"],
+ ["  for (int i = 0; i < nbMesures; i++) {","csvLoop"],
+ ['    csv += String(histTemps[i]) + ";" + virgule(histT[i]) + ...;',"csvLoop"],
+ ["  }","csvLoop"],
+ ['  server.sendHeader("Content-Disposition", "attachment; ...");',"csvSend"],
+ ['  server.send(200, "text/csv; charset=utf-8", csv);',"csvSend"],
+ ["}",""],
+ ["",""],
+ ["void setup() {","setup"],
+ ["  Serial.begin(115200);","setup"],
+ ["  dht.begin();                   // démarrer le capteur","dhtbegin"],
+ ["  WiFi.begin(ssid, password);    // connexion au Wi-Fi","wbegin"],
+ ["  while (WiFi.status() != WL_CONNECTED) {","wwait"],
+ ["    delay(500);","wwait"],
+ ["  }","wwait"],
+ ["  Serial.println(WiFi.localIP()); // adresse à taper","ip"],
+ ['  server.on("/", handleRoot);    // adresse → fonction',"routes"],
+ ['  server.on("/mesures.csv", handleCSV);',"routes"],
+ ["  server.begin();                // démarrage du serveur","routes"],
+ ["  mesurer();                     // première mesure","first"],
+ ["  derniereMesure = millis();","first"],
+ ["}",""],
+ ["",""],
+ ["void loop() {","loop"],
+ ["  server.handleClient();         // traite les requêtes","handle"],
+ ["  if (millis() - derniereMesure >= PERIODE) {","timer"],
+ ["    derniereMesure = millis();","timer"],
+ ["    mesurer();","call"],
+ ["  }",""],
+ ["}",""]
+];
+const codeEl=$("code");
+CODE.forEach(([t,k])=>{
+  const s=document.createElement("span"); s.dataset.k=k;
+  const i=t.indexOf("//");
+  if(i>=0){ s.textContent=t.slice(0,i); const c=document.createElement("em"); c.className="cm"; c.textContent=t.slice(i); s.appendChild(c); }
+  else s.textContent=t||" ";
+  codeEl.appendChild(s);
+});
+function hl(keys){
+  keys=keys||[];
+  codeEl.querySelectorAll("span[data-k]").forEach(s=>s.classList.toggle("on",!!s.dataset.k&&keys.includes(s.dataset.k)));
+  const f=codeEl.querySelector("span.on");
+  if(f){ codeEl.scrollTo({top:Math.max(0,f.offsetTop-codeEl.clientHeight/3),behavior:reduced?"auto":"smooth"}); }
+}
+
+/* ---------- moniteur série ---------- */
+const serialEl=$("serial");
+function serial(line,cls){
+  const s=document.createElement("span"); if(cls) s.className=cls;
+  s.textContent=line+"\n"; serialEl.appendChild(s);
+  while(serialEl.childNodes.length>120) serialEl.removeChild(serialEl.firstChild);
+  serialEl.scrollTop=serialEl.scrollHeight;
+}
+
+/* ---------- geometry ---------- */
+const NODES=[
+  {id:"phone",t:"Navigateur web",s:"téléphone ou ordinateur"},
+  {id:"ap",t:"Point d'accès Wi-Fi",s:"box ou partage de connexion"},
+  {id:"esp",t:"ESP32",s:"serveur web"},
+  {id:"sensor",t:"Capteur DHT11",s:"mesure l'air"}
+];
+let G;
+function geom(vertical){
+  if(!vertical){
+    const xs=[120,395,670,905];
+    return {vertical,w:1010,h:330,half:64,lane:20,c:xs.map(x=>({x,y:150})),
+      off:(p,k)=>({x:p.x,y:p.y+(k==="ret"?G.lane:-G.lane)}),
+      nlab:p=>({x:p.x,y:p.y+86,a:"middle",dy:18}),
+      llab:(a,b)=>({x:(a.x+b.x)/2,y:a.y-40,a:"middle"}),
+      along:(p,d)=>({x:p.x+d,y:p.y}),
+      lan:{x:10,y:10,w:990,h:305,tx:26,ty:302}};
+  }
+  const ys=[100,340,580,810];
+  return {vertical,w:420,h:940,half:62,lane:20,c:ys.map(y=>({x:115,y})),
+    off:(p,k)=>({x:p.x+(k==="ret"?G.lane:-G.lane),y:p.y}),
+    nlab:p=>({x:205,y:p.y-4,a:"start",dy:18}),
+    llab:(a,b)=>({x:160,y:(a.y+b.y)/2+4,a:"start"}),
+    along:(p,d)=>({x:p.x,y:p.y+d}),
+    lan:{x:6,y:6,w:408,h:925,tx:18,ty:922}};
+}
+function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function txt(parent,x,y,s,cls,anchor){ const t=el("text",{x,y,class:cls,"text-anchor":anchor||"middle"},parent); t.textContent=s; return t; }
+
+/* ---------- icons ---------- */
+function iconPhone(g){
+  const p=el("g",{id:"phoneIcon"},g);
+  el("rect",{x:-36,y:-56,width:72,height:112,rx:11,class:"dev-body"},p);
+  el("rect",{x:-29,y:-46,width:58,height:88,rx:4,class:"screen"},p);
+  el("rect",{x:-26,y:-43,width:52,height:11,rx:5.5,class:"url"},p);
+  txt(p,0,-35.5,"","tiny").id="urlTxt";
+  const pg=el("g",{id:"pgContent"},p);
+  txt(pg,0,-22,"Station météo","pg-title");
+  const val=el("g",{id:"pgVal"},pg);
+  txt(val,0,-7,"","pg-t").id="pgT";
+  txt(val,0,6,"","pg-h").id="pgH";
+  el("rect",{x:-22,y:9,width:44,height:12,class:"pg-bar"},val);
+  el("polyline",{points:"",class:"pg-spark-t",id:"pgSparkT"},val);
+  el("polyline",{points:"",class:"pg-spark-h",id:"pgSparkH"},val);
+  txt(pg,0,-3,"","pg-err").id="pgMesErr";
+  txt(pg,0,6,"","pg-err").id="pgMesErr2";
+  txt(pg,0,27,"","tiny").id="pgAge";
+  txt(p,0,-6,"","pg-err").id="pgErr";
+  txt(p,0,4,"","pg-err").id="pgErr2";
+  el("circle",{cx:0,cy:49,r:3,class:"tiny"},p);
+  txt(p,-46,-40,"⟳ 5 s","pg-refresh","end").id="pgRefresh";
+  const b=el("g",{id:"badge4g",transform:"translate(30,-54)"},p);
+  el("rect",{x:-4,y:-9,width:28,height:18,rx:9,class:"badge4g"},b);
+  txt(b,10,4,"4G","badge4g-t");
+}
+function iconAP(g){
+  const a=el("g",{id:"apIcon",class:"ap"},g);
+  const arcs=el("g",{},a);
+  [9,17,25].forEach(r=>el("path",{d:`M ${-r} -16 A ${r} ${r} 0 0 1 ${r} -16`,class:"arc"},arcs));
+  el("line",{x1:-26,y1:4,x2:-34,y2:-30,class:"ant"},a);
+  el("line",{x1:26,y1:4,x2:34,y2:-30,class:"ant"},a);
+  el("rect",{x:-42,y:2,width:84,height:28,rx:6,class:"router"},a);
+  [-24,-14,-4].forEach(x=>el("circle",{cx:x,cy:16,r:2.6,class:"rled"},a));
+  txt(a,20,20,"Wi-Fi","tiny");
+}
+function iconESP(g){
+  const b=el("g",{id:"espIcon"},g);
+  el("rect",{x:-58,y:-9,width:10,height:18,rx:2,class:"usb"},b);
+  el("rect",{x:-50,y:-34,width:100,height:68,rx:5,class:"pcb"},b);
+  for(let x=-42;x<=42;x+=8){ el("circle",{cx:x,cy:-28,r:1.8,class:"pin"},b); el("circle",{cx:x,cy:28,r:1.8,class:"pin"},b); }
+  el("rect",{x:-12,y:-20,width:50,height:38,rx:2,class:"shield"},b);
+  txt(b,13,3,"ESP32","chip-t");
+  el("path",{d:"M 40 -20 v 8 h 6 v 6 h -6 v 6 h 6 v 6 h -6 v 8",class:"meander"},b);
+  el("circle",{cx:-38,cy:14,r:3.4,class:"esp-led"},b);
+  txt(b,-30,-10,"D4","tiny").setAttribute("fill","#DDE5EC");
+  txt(g,0,50,"","ip-t").id="ipTxt";
+}
+function iconSensor(g){
+  const s=el("g",{id:"sensIcon"},g);
+  const w=el("g",{},s);
+  [-20,-6,8].forEach(y=>el("path",{d:`M 38 ${y} q 5 -5 10 0 t 10 0`,class:"airwave"},w));
+  el("rect",{x:-27,y:-42,width:54,height:66,rx:5,class:"dht-pcb"},s);
+  el("rect",{x:-20,y:-36,width:40,height:44,rx:4,class:"dht-body"},s);
+  for(let r=0;r<4;r++) for(let c=0;c<3;c++) el("rect",{x:-14+c*10,y:-31+r*10,width:6,height:6,rx:1.2,class:"dht-hole"},s);
+  [["S",-9],["+",0],["–",9]].forEach(([p,x])=>{ txt(s,x,19,p,"dht-pin"); el("line",{x1:x,y1:24,x2:x,y2:40,class:"dht-leg"},s); });
+  if(G.vertical) txt(g,12,-52,"","air-t","start").id="airTxt";   // à droite du fil DATA
+  else txt(g,0,-58,"","air-t").id="airTxt";
+}
+const ICON={phone:iconPhone,ap:iconAP,esp:iconESP,sensor:iconSensor};
+
+let layers={};
+function build(){
+  const vertical=svg.clientWidth<640;
+  if(vertical===S.vertical) return;
+  S.vertical=vertical; G=geom(vertical);
+  svg.setAttribute("viewBox",`0 0 ${G.w} ${G.h}`);
+  svg.innerHTML="";
+  const defs=el("defs",{},svg);
+  const mk=(id,cls)=>{ const m=el("marker",{id,viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs); el("path",{d:"M0,0 L10,5 L0,10 z",class:cls},m); };
+  mk("aCmd","arrow-cmd"); mk("aRet","arrow-ret");
+
+  const L=G.lan;
+  el("rect",{x:L.x,y:L.y,width:L.w,height:L.h,rx:16,class:"lan-box"},svg);
+  txt(svg,L.tx,L.ty-8,"Réseau local Wi-Fi · 192.168.1.x","lan-t","start");
+
+  layers.links=el("g",{},svg); layers.nodes=el("g",{},svg); layers.pk=el("g",{},svg);
+  const C=G.c;
+  for(let i=0;i<2;i++){
+    const a=C[i],b=C[i+1];
+    const g=el("g",{class:"wlink",id:"link"+i},layers.links);
+    const a1=G.along(a,G.half),b1=G.along(b,-G.half);
+    const ca=G.off(a1,"cmd"),cb=G.off(b1,"cmd"),ra=G.off(a1,"ret"),rb=G.off(b1,"ret");
+    el("line",{x1:ca.x,y1:ca.y,x2:cb.x,y2:cb.y,class:"lane-cmd","marker-end":"url(#aCmd)"},g);
+    el("line",{x1:rb.x,y1:rb.y,x2:ra.x,y2:ra.y,class:"lane-ret","marker-end":"url(#aRet)"},g);
+    const P=G.llab(a,b); const t=txt(g,P.x,P.y,"Wi-Fi 2,4 GHz","l-label",P.a); t.id="llab"+i;
+    const m={x:(a1.x+b1.x)/2,y:(a1.y+b1.y)/2}; const c=txt(g,m.x,m.y+9,"✕","cut"); c.id="cut"+i; c.style.display="none";
+  }
+  {
+    const a=G.along(C[2],G.half-6),b=G.along(C[3],-30);
+    const g=el("g",{},layers.links);
+    el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"wire",id:"dataWire"},g);
+    const m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+    const c=txt(g,m.x,m.y+9,"✕","cut"); c.id="wireCut"; c.style.display="none";
+    const P=G.llab(C[2],C[3]); txt(g,P.x,P.y,"D4 · fil DATA","l-label",P.a);
+  }
+  NODES.forEach((n,i)=>{
+    const p=C[i];
+    const g=el("g",{class:"node",id:"n-"+n.id,transform:`translate(${p.x},${p.y})`},layers.nodes);
+    el("rect",{x:-64,y:-68,width:128,height:136,rx:14,class:"halo"},g);
+    ICON[n.id](g);
+    const P=G.nlab(p);
+    txt(layers.nodes,P.x,P.y,n.t,"n-label",P.a);
+    txt(layers.nodes,P.x,P.y+P.dy,n.s,"n-sub",P.a);
+  });
+  render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  const q=id=>svg.querySelector("#"+id);
+  q("espIcon")?.classList.toggle("online",S.connected);
+  q("apIcon")?.classList.toggle("off",!S.wifi);
+  q("link0")?.classList.toggle("off",!S.wifi||S.g4);
+  q("link1")?.classList.toggle("off",!S.wifi);
+  if(q("cut0")) q("cut0").style.display=(!S.wifi||S.g4)?"":"none";
+  if(q("cut1")) q("cut1").style.display=!S.wifi?"":"none";
+  if(q("llab0")) q("llab0").textContent=S.g4?"4G → Internet (hors réseau local)":"Wi-Fi 2,4 GHz";
+  q("dataWire")?.classList.toggle("off",!S.wire);
+  if(q("wireCut")) q("wireCut").style.display=S.wire?"none":"";
+  const a=air();
+  if(q("airTxt")) q("airTxt").textContent=`air : ${fr(a.t,1)} °C · ${fr(a.h,0)} %`;
+  q("phoneIcon")?.classList.toggle("g4",S.g4);
+  if(q("badge4g")) q("badge4g").style.display=S.g4?"":"none";
+  if(q("ipTxt")) q("ipTxt").textContent=S.connected?IP:"";
+  if(q("urlTxt")) q("urlTxt").textContent=(S.page||S.pageErr)?IP:"saisir l'adresse…";
+  const P=S.page;
+  if(q("pgContent")) q("pgContent").style.display=P?"":"none";
+  if(P){
+    q("pgVal").style.display=P.err?"none":"";
+    q("pgT").textContent=fr(P.t,1)+" °C";
+    q("pgH").textContent=fr(P.h,0)+" %";
+    const sp=(k,max)=>P.hist.map((m,i)=>`${(-22+44*i/(NB_MAX-1)).toFixed(1)},${(21-12*m[k]/max).toFixed(1)}`).join(" ");
+    q("pgSparkT").setAttribute("points",sp("t",50));
+    q("pgSparkH").setAttribute("points",sp("h",100));
+    q("pgMesErr").textContent=P.err?"Erreur de lecture":"";
+    q("pgMesErr2").textContent=P.err?"du DHT11 !":"";
+    q("pgAge").textContent="il y a "+P.age+" s";
+  }
+  if(q("pgErr")){ q("pgErr").textContent=S.pageErr?"Page":""; q("pgErr2").textContent=S.pageErr?"inaccessible":""; }
+  if(q("pgRefresh")) q("pgRefresh").style.display=(P&&S.auto)?"":"none";
+
+  const pill=(id,l,v,c)=>{ const p=$(id); p.className="pill "+(c||""); p.innerHTML=l+" : <b>"+v+"</b>"; };
+  pill("stBoard","Carte",!S.booted?"éteinte":(!S.connected?"hors ligne":(S.server?"serveur prêt":"connectée")),!S.booted?"":(S.connected?"ok":"bad"));
+  pill("stWifi","Wi-Fi",S.wifi?"actif":"coupé",S.wifi?"ok":"bad");
+  pill("stPhone","Téléphone",S.g4?"4G (hors réseau local)":"Wi-Fi local",S.g4?"bad":"ok");
+  pill("stWire","Fil DATA",S.wire?"branché":"débranché",S.wire?"ok":"bad");
+  pill("stAuto","Page ouverte",S.auto?"oui, rechargée toutes les 5 s":"non",S.auto?"ok":"");
+  pill("stTime","Temps écoulé",fr(S.time,S.time%1?1:0)+" s","");
+
+  setVar("vIp",S.connected?IP:"—");
+  setVar("vLast",S.lastMeas==null?"—":"à t = "+fr(S.lastMeas,S.lastMeas%1?1:0)+" s");
+  setVar("vT",S.board.t.toFixed(2));
+  setVar("vH",S.board.h.toFixed(2));
+  setVar("vErr",String(S.board.err));
+  setVar("vNb",String(S.hist.length));
+  renderWeb();
+  setVar("vPage",S.pageErr?"page inaccessible":(P?(P.err?"erreur capteur":fr(P.t,1)+" °C · "+fr(P.h,0)+" %"):"aucune"));
+
+  $("bootBtn").disabled=S.busy||S.booted;
+  $("bootBtn").textContent=S.booted?"Carte démarrée":"1. Démarrer la carte";
+  $("pageBtn").disabled=S.busy;
+  $("pageBtn").textContent=S.page?"2. Recharger la page":"2. Ouvrir la page";
+  $("measBtn").disabled=S.busy||!S.booted;
+  $("autoBtn").setAttribute("aria-pressed",String(S.auto));
+  $("wifiBtn").disabled=S.busy;
+  $("wifiBtn").setAttribute("aria-pressed",String(S.wifi));
+  $("wifiBtn").textContent=S.wifi?"7. Couper le Wi-Fi":"7. Rétablir le Wi-Fi";
+  $("wireBtn").disabled=S.busy;
+  $("wireBtn").setAttribute("aria-pressed",String(S.wire));
+  $("wireBtn").textContent=S.wire?"6. Débrancher le fil DATA":"6. Rebrancher le fil DATA";
+  $("g4").disabled=S.busy; $("g4").checked=S.g4;
+  $("csvBtn").disabled=S.busy;
+}
+const last={};
+function setVar(id,v){ const b=$(id),c=b.querySelector("code"); if(last[id]!==undefined&&last[id]!==v){ b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); } last[id]=v; c.textContent=v; }
+function active(id){ svg.querySelectorAll(".node").forEach(n=>n.classList.toggle("active",n.id==="n-"+id)); }
+function apPulse(on){ svg.querySelector("#apIcon")?.classList.toggle("pulse",on&&S.wifi); }
+
+/* ---------- timing ---------- */
+let nextResolve=null;
+const speed=()=>parseFloat($("speed").value)||1;
+class Abort extends Error{}
+function wait(ms,tok){
+  return new Promise(res=>{
+    if($("stepMode").checked){ nextResolve=res; $("nextBtn").disabled=false; $("nextBtn").focus({preventScroll:true}); }
+    else setTimeout(res,ms/speed());
+  }).then(()=>{ if(tok!==S.token) throw new Abort(); });
+}
+function scenario(n){ $("scenario").textContent="Scénario : "+n; $("steps").innerHTML=""; }
+function say(text,o){
+  o=o||{};
+  const ol=$("steps"); ol.querySelectorAll("li.current").forEach(li=>li.classList.remove("current"));
+  const li=document.createElement("li"); li.innerHTML=text; li.className="current"+(o.alert?" alert":""); ol.appendChild(li);
+  hl(o.code); if(o.node!==undefined) active(o.node);
+}
+function movePacket(from,to,label,kind,alive,failFrac,fast){
+  const lane=kind==="sys"?"cmd":kind;
+  const a=G.off(G.c[from],lane),b=G.off(G.c[to],lane);
+  const g=el("g",{class:"pk-"+kind},layers.pk);
+  const w=label.length*7+16;
+  let px,py;
+  if(!G.vertical){ px=-w/2; py=(kind==="ret")?14:-34; } else { px=(kind==="ret")?14:-w-14; py=-10; }
+  if(G.vertical && px<-a.x+4) px=-a.x+4;
+  el("rect",{x:px,y:py,width:w,height:20,rx:10,class:"pk-pill"},g);
+  txt(g,px+w/2,py+14,label,"pk-t");
+  el("circle",{r:7.5,class:"pk-dot-"+kind},g);
+  const dist=Math.hypot(b.x-a.x,b.y-a.y), end=failFrac==null?1:failFrac;
+  const dur=reduced?1:(dist*end)/(0.28*speed()*(fast?2.6:1));
+  return new Promise(res=>{
+    const t0=performance.now();
+    function step(now){
+      if(!alive()){ g.remove(); return res(); }
+      const k=Math.min(1,(now-t0)/dur)*end;
+      const e=failFrac==null?(k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2):k;
+      g.setAttribute("transform",`translate(${a.x+(b.x-a.x)*e},${a.y+(b.y-a.y)*e})`);
+      if(k<end) requestAnimationFrame(step);
+      else if(failFrac!=null){ txt(g,0,9,"✕","cut"); setTimeout(()=>{ g.remove(); res(); },reduced?600:(fast?500:900)/speed()); }
+      else setTimeout(()=>{ g.remove(); res(); },reduced?350:120);
+    }
+    requestAnimationFrame(step);
+  }).then(()=>{ if(!alive()) throw new Abort(); });
+}
+async function run(fn){
+  if(S.busy) return;
+  S.qtok++;                                 // interrompt un cycle automatique en cours
+  if(layers.pk) layers.pk.innerHTML="";
+  S.busy=true; render(); const tok=S.token;
+  const alive=()=>tok===S.token;
+  try{ await fn(tok,alive); } catch(e){ if(!(e instanceof Abort)) console.error(e); }
+  finally{ if(tok===S.token){ S.busy=false; active(null); apPulse(false); $("nextBtn").disabled=true; render(); scheduleAuto(); } }
+}
+
+/* ---------- actions communes ---------- */
+function age(){ return S.lastMeas==null?0:Math.floor(S.time-S.lastMeas); }
+function pageData(){ return {t:S.board.t,h:S.board.h,err:S.board.err,age:age(),hist:S.hist.slice()}; }
+function storeMeasure(m){
+  S.lastMeas=S.time;
+  if(!m){ S.board={t:S.board.t,h:S.board.h,err:true}; serial("Erreur de lecture du DHT11 !","err"); }
+  else {
+    S.board={t:m.t,h:m.h,err:false};
+    if(S.hist.length===NB_MAX) S.hist.shift();      // historique plein : on oublie la plus ancienne
+    S.hist.push({s:Math.floor(S.time),t:m.t,h:m.h});
+    serial("Temperature : "+m.t.toFixed(2)+" C   Humidite : "+m.h.toFixed(2)+" %"); }
+}
+
+/* ---------- scénarios ---------- */
+async function connectAndServe(tok,alive){
+  say("<code>WiFi.begin(ssid, password)</code> : l'ESP32 envoie le <b>nom du réseau</b> et le <b>mot de passe</b> au point d'accès.",{code:["wbegin","id"],node:"esp"});
+  if(!S.wifi){
+    await movePacket(2,1,"SSID + mot de passe","sys",alive,0.55);
+    serial("Connexion au Wi-Fi.........","sys");
+    say("Aucun réseau Wi-Fi : la carte reste bloquée dans la boucle <code>while</code> et réessaie toutes les 500 ms. Le serveur web n'est pas démarré, et <b>aucune mesure</b> n'est faite : <code>loop()</code> n'est pas encore atteinte.",{code:["wwait"],alert:true,node:"esp"});
+    await wait(1800,tok); return false;
+  }
+  apPulse(true);
+  await movePacket(2,1,"SSID + mot de passe","sys",alive);
+  say("Le point d'accès accepte la carte et lui attribue une <b>adresse IP</b> sur le réseau local (service DHCP).",{node:"ap",code:["wwait"]});
+  await movePacket(1,2,"IP = "+IP,"sys",alive);
+  S.connected=true; render(); apPulse(false);
+  serial("Connexion au Wi-Fi...","sys"); serial("Adresse IP : "+IP,"sys");
+  say(`<code>Serial.println(WiFi.localIP())</code> : le moniteur série affiche <b>${IP}</b>. C'est l'adresse à taper dans le navigateur.`,{code:["ip"],node:"esp"});
+  await wait(1800,tok);
+  if(!S.server){
+    say("<code>server.on(\"/\", handleRoot)</code> associe l'adresse <code>/</code> à la fonction <code>handleRoot()</code>. Puis <code>server.begin()</code> démarre le serveur web sur le port 80.",{code:["routes"],node:"esp"});
+    await wait(2200,tok);
+    S.server=true; render();
+  }
+  return true;
+}
+async function narratedMeasure(tok,alive,first){
+  if(!first){
+    say("Dans <code>loop()</code>, le test <code>millis() - derniereMesure >= PERIODE</code> devient vrai : <b>5 secondes</b> sont passées depuis la dernière mesure. Le programme appelle <code>mesurer()</code>.",{code:["timer","call"],node:"esp"});
+    await wait(1900,tok);
+  } else {
+    say("<code>mesurer()</code> : la carte fait une <b>première mesure</b>, pour que la page ait une valeur à afficher dès le début.",{code:["first","mes"],node:"esp"});
+    await wait(1600,tok);
+  }
+  say("<code>dht.readTemperature()</code> : l'ESP32 envoie une impulsion de démarrage sur le fil DATA (broche D4) pour demander une mesure au capteur.",{code:["read"],node:"esp"});
+  if(!S.wire){
+    await movePacket(2,3,"demande","sys",alive,0.6);
+    say("Le fil DATA est débranché : le capteur ne répond pas. <code>readTemperature()</code> et <code>readHumidity()</code> renvoient <b>NaN</b> (« pas un nombre »).",{alert:true,code:["read"],node:"sensor"});
+    await wait(1900,tok);
+    storeMeasure(null); render();
+    say("<code>isnan(t)</code> est vrai : <code>erreur_capteur</code> passe à <b>true</b> et le moniteur série affiche « Erreur de lecture du DHT11 ! ». La prochaine page envoyée affichera ce message d'erreur.",{alert:true,code:["nan","errT"],node:"esp"});
+    await wait(2200,tok); return;
+  }
+  await movePacket(2,3,"demande","sys",alive);
+  const a=air(), m=sensorValue();
+  say(`Le DHT11 mesure l'air autour de lui : en réalité <b>${fr(a.t,1)} °C</b> et <b>${fr(a.h,0)} %</b>. Il arrondit au degré et au pour cent près, avec une précision de ± 2 °C et ± 5 %.`,{node:"sensor",code:[]});
+  await wait(2000,tok);
+  say("Il répond sur le même fil par une trame de <b>40 bits</b> : humidité, température et une somme de contrôle.",{node:"sensor"});
+  await movePacket(3,2,`${m.t} °C · ${m.h} %`,"ret",alive);
+  storeMeasure(m); render();
+  say(`Mesure valide : <code>erreur_capteur = false</code>, <code>temperature = ${m.t}.00</code>, <code>humidite = ${m.h}.00</code>. <code>enregistrer(t, h)</code> l'ajoute à l'<b>historique</b> (${S.hist.length} mesure${S.hist.length>1?"s":""}). Rien n'est envoyé au téléphone : il faut qu'il le <b>demande</b>.`,{code:["ok","assign","enrCall","enr"],node:"esp"});
+  await wait(2200,tok);
+}
+
+function boot(){
+  run(async (tok,alive)=>{
+    scenario("démarrage de la carte");
+    S.booted=true; render();
+    serial("Démarrage…","sys");
+    say("La carte est alimentée par le câble USB : <code>setup()</code> s'exécute une seule fois.",{code:["setup"],node:"esp"});
+    await wait(1600,tok);
+    say("<code>dht.begin()</code> prépare la broche D4 pour dialoguer avec le capteur DHT11.",{code:["dhtbegin"],node:"sensor"});
+    await wait(1500,tok);
+    const ok=await connectAndServe(tok,alive);
+    if(!ok) return;
+    advanceAir();
+    await narratedMeasure(tok,alive,true);
+    say("<code>loop()</code> tourne maintenant en continu : <code>server.handleClient()</code> attend les requêtes, et une mesure est faite toutes les 5 s. À vous : cliquez sur « 2. Ouvrir la page ».",{code:["loop","handle","timer"],node:"phone"});
+  });
+}
+
+async function request(alive,path){
+  path=path||"/";
+  if(S.g4){
+    await movePacket(0,1,"GET "+path,"cmd",alive,0.5);
+    say(`Le téléphone est en <b>4G</b> : il est sur Internet, pas sur le réseau local. L'adresse <b>${IP}</b> est une adresse <b>privée</b>, joignable seulement depuis le même Wi-Fi. La requête n'arrive jamais.`,{alert:true,node:"phone"});
+    return false;
+  }
+  if(!S.wifi){
+    await movePacket(0,1,"GET "+path,"cmd",alive,0.5);
+    say("Le point d'accès Wi-Fi est coupé : la requête ne peut pas atteindre la carte.",{alert:true,node:"ap"});
+    return false;
+  }
+  apPulse(true);
+  if(!S.server){
+    await movePacket(0,2,"GET "+path,"cmd",alive,0.72);
+    apPulse(false);
+    say(!S.booted?"Aucun appareil ne répond à cette adresse : la carte est éteinte.":"La carte n'a pas encore démarré son serveur web : personne ne répond.",{alert:true,node:"esp"});
+    return false;
+  }
+  await movePacket(0,2,"GET "+path,"cmd",alive);
+  apPulse(false);
+  return true;
+}
+async function fail(tok){
+  await wait(1400,tok);
+  S.pageErr=true; S.page=null; render();
+  say("Après un délai d'attente, le navigateur affiche <b>« Page inaccessible »</b>. Cette page d'erreur ne contient pas l'instruction <code>refresh</code> : le navigateur <b>arrête de recharger</b>. Il faudra recharger la page à la main.",{alert:true,node:"phone"});
+  await wait(1800,tok);
+}
+
+function openPage(){
+  run(async (tok,alive)=>{
+    scenario(S.page?"recharger la page":"ouvrir la page");
+    say(`Vous tapez <b>http://${IP}</b> dans le navigateur : il envoie une <b>requête HTTP GET /</b> à la carte, en Wi-Fi, via le point d'accès.`,{node:"phone",code:[]});
+    await wait(1300,tok);
+    if(!(await request(alive))) return fail(tok);
+    say("<code>server.handleClient()</code> reçoit la requête <code>GET /</code> et appelle <code>handleRoot()</code>, qui construit la page avec <code>page()</code>.",{code:["handle","root"],node:"esp"});
+    await wait(1700,tok);
+    const P=pageData();
+    say(P.err
+      ?"<code>erreur_capteur</code> vaut <b>true</b> : la page contient le message « Erreur de lecture du DHT11 ! »."
+      :`La page contient la <b>dernière mesure gardée en mémoire</b> (${fr(P.t,1)} °C, ${fr(P.h,0)} %), faite il y a ${P.age} s, affichée par deux <b>jauges</b>. <code>handleRoot()</code> ne fait <b>pas</b> de nouvelle mesure.`,{code:P.err?["pgerr"]:["pgval","pgage","gfx"],node:"esp"});
+    await wait(1900,tok);
+    say(`<code>courbe()</code> dessine l'<b>historique</b> gardé par la carte (${P.hist.length} mesure${P.hist.length>1?"s":""}) : température et humidité. La page contient aussi le lien <b>Télécharger les mesures (fichier CSV)</b>.`,{code:["pgcurve","gfx","hist"],node:"esp"});
+    await wait(2000,tok);
+    say("La page contient aussi <code>&lt;meta http-equiv='refresh' content='5'&gt;</code> : elle demande au navigateur de la recharger dans 5 s.",{code:["refresh"],node:"esp"});
+    await wait(1700,tok);
+    say("La carte répond <b>200 OK</b> avec la page HTML.",{node:"esp",code:["root"]});
+    apPulse(true);
+    await movePacket(2,0,"200 OK · page HTML","ret",alive);
+    apPulse(false);
+    S.page=P; S.pageErr=false; render();
+    say("Le navigateur affiche la page : deux jauges (température et humidité), l'âge de la mesure et les courbes de l'historique. Cliquez sur « 4. Laisser la page ouverte » pour voir les rechargements automatiques.",{node:"phone",code:[]});
+    await wait(1200,tok);
+  });
+}
+
+function measureNext(){
+  run(async (tok,alive)=>{
+    scenario("mesure suivante");
+    if(S.lastMeas==null){
+      say("La carte est encore bloquée dans la boucle <code>while</code> de connexion au Wi-Fi : <code>loop()</code> n'est pas atteinte, donc aucune mesure n'est faite.",{alert:true,code:["wwait"],node:"esp"});
+      await wait(1800,tok); return;
+    }
+    S.time=Math.max(S.time,S.lastMeas+5);
+    advanceAir(); render();
+    await narratedMeasure(tok,alive,false);
+    if(S.page) say("La page affichée sur le téléphone n'a <b>pas changé</b> : elle montre encore l'ancienne mesure jusqu'au prochain rechargement.",{node:"phone",code:[]});
+    await wait(1400,tok);
+  });
+}
+
+function toggleWifi(){
+  const on=!S.wifi;
+  run(async (tok,alive)=>{
+    scenario(on?"retour du Wi-Fi":"coupure du Wi-Fi");
+    S.wifi=on; render();
+    if(!on){
+      say("Le point d'accès Wi-Fi est coupé : ni le téléphone ni la carte ne sont plus sur le réseau local.",{node:"ap",alert:true,code:[]});
+      await wait(1500,tok);
+      if(S.connected){
+        S.connected=false; render();
+        say("La carte perd sa connexion Wi-Fi : son serveur web n'est plus joignable. Elle continue pourtant à <b>mesurer</b> toutes les 5 s (regardez le moniteur série).",{node:"esp",alert:true,code:["timer","call"]});
+        await wait(1700,tok);
+      }
+      return;
+    }
+    say("Le point d'accès Wi-Fi est de nouveau disponible.",{node:"ap",code:[]});
+    await wait(1200,tok);
+    if(S.booted){
+      say("La bibliothèque WiFi de l'ESP32 se reconnecte automatiquement au réseau.",{node:"esp"});
+      await wait(1000,tok);
+      const ok=await connectAndServe(tok,alive);
+      if(ok){
+        if(S.lastMeas==null){ advanceAir(); await narratedMeasure(tok,alive,true); }
+        say(`La carte obtient en général la même adresse IP (${IP}). Rechargez la page : elle affiche la mesure la plus récente. Les mesures faites pendant la coupure ne sont <b>pas conservées</b>.`,{node:"phone",code:["handle"]});
+      }
+    }
+  });
+}
+
+function toggle4G(){
+  const on=$("g4").checked;
+  run(async tok=>{
+    scenario(on?"téléphone en 4G":"téléphone en Wi-Fi local");
+    S.g4=on; render();
+    say(on?"Le téléphone quitte le Wi-Fi et passe en 4G : il accède à Internet par le réseau de l'opérateur, en dehors du réseau local de la carte. Essayez de recharger la page."
+          :"Le téléphone se reconnecte au Wi-Fi local : il est de nouveau sur le même réseau que la carte. Rechargez la page.",{node:"phone",alert:on,code:[]});
+    await wait(1500,tok);
+  });
+}
+
+function toggleWire(){
+  const on=!S.wire;
+  run(async tok=>{
+    scenario(on?"fil DATA rebranché":"fil DATA débranché");
+    S.wire=on; render();
+    say(on?"Le fil DATA est rebranché : la prochaine mesure sera de nouveau valide, et <code>erreur_capteur</code> repassera à false."
+          :"Le fil jaune (DATA, broche D4) est débranché : la carte ne peut plus dialoguer avec le capteur. Faites une mesure ou laissez la page ouverte pour voir ce qui s'affiche.",{node:"sensor",alert:!on,code:[]});
+    await wait(1400,tok);
+  });
+}
+
+function blow(){
+  S.blow.h=Math.min(S.blow.h+35,60);
+  S.blow.t=Math.min(S.blow.t+3,6);
+  svg.querySelector("#sensIcon")?.classList.add("blowing");
+  setTimeout(()=>svg.querySelector("#sensIcon")?.classList.remove("blowing"),2500);
+  render();
+  if(!S.busy){
+    say("Vous soufflez sur le capteur : l'air autour de lui devient plus humide et un peu plus chaud. Combien de temps faut-il pour que la <b>page du téléphone</b> change ?",{node:"sensor"});
+    if(!S.auto&&S.booted) say("Astuce : ouvrez la page puis cliquez sur « 4. Laisser la page ouverte » pour observer le délai.",{node:"sensor"});
+  }
+}
+
+/* ---------- page ouverte : mesures et rechargements automatiques ---------- */
+let autoTimer=null;
+function scheduleAuto(){ clearTimeout(autoTimer); if(S.auto) autoTimer=setTimeout(autoTick,2400/speed()); }
+async function autoTick(){
+  if(!S.auto) return;
+  if(S.busy||!S.booted||$("stepMode").checked){ scheduleAuto(); return; }
+  const q=S.qtok, tok=S.token, alive=()=>q===S.qtok&&tok===S.token;
+  try{ await quickCycle(alive); }
+  catch(e){ if(!(e instanceof Abort)) console.error(e); }
+  if(alive()){ hl([]); active(null); apPulse(false); render(); scheduleAuto(); }
+}
+async function quickCycle(alive){
+  // le temps avance par pas de 2,5 s : mesure à 0, 5, 10… ; rechargement de la page à 2,5 ; 7,5…
+  S.time+=2.5;
+  if(S.lastMeas!=null&&S.time-S.lastMeas>=5){
+    advanceAir(); render();
+    hl(["timer","call","read"]); active("esp");
+    if(!S.wire){
+      await movePacket(2,3,"demande","sys",alive,0.6,true);
+      storeMeasure(null); hl(["nan","errT"]); render(); return;
+    }
+    await movePacket(2,3,"demande","sys",alive,null,true);
+    const m=sensorValue(); active("sensor");
+    await movePacket(3,2,`${m.t} °C · ${m.h} %`,"ret",alive,null,true);
+    storeMeasure(m); hl(["ok","assign","enrCall"]); render();
+    return;
+  }
+  render();
+  if(!S.page) return;                         // pas de page ouverte (ou page d'erreur) : rien ne se recharge
+  hl(["refresh"]); active("phone");
+  if(S.g4||!S.wifi||!S.server){
+    await movePacket(0,1,"GET /","cmd",alive,0.5,true);
+    S.page=null; S.pageErr=true; render();
+    say("Le rechargement automatique a échoué : « Page inaccessible ». La page d'erreur ne se recharge plus toute seule.",{alert:true,node:"phone"});
+    return;
+  }
+  apPulse(true);
+  await movePacket(0,2,"GET /","cmd",alive,null,true);
+  hl(["handle","root"]); active("esp");
+  const P=pageData();
+  await movePacket(2,0,"200 OK · page HTML","ret",alive,null,true);
+  apPulse(false);
+  S.page=P; render(); active("phone");
+}
+function toggleAuto(){
+  S.auto=!S.auto; render();
+  if(S.auto){
+    if(!S.busy){
+      scenario("page ouverte");
+      if(!S.booted) say("Démarrez d'abord la carte (« 1. Démarrer la carte »), puis ouvrez la page.",{node:"esp",code:[]});
+      else if(!S.page) say("La carte mesure toutes les 5 s (regardez le moniteur série). Ouvrez la page (« 2. Ouvrir la page ») pour que le navigateur la recharge toutes les 5 s.",{node:"phone",code:["timer"]});
+      else say("La carte mesure toutes les <b>5 s</b> ; le navigateur recharge la page toutes les <b>5 s</b>. Les deux ne sont pas synchronisés : la page montre une mesure faite il y a quelques secondes. Soufflez sur le capteur et observez le délai.",{node:"phone",code:["refresh","timer"]});
+    }
+    scheduleAuto();
+  } else { clearTimeout(autoTimer); S.qtok++; if(layers.pk&&!S.busy) layers.pk.innerHTML=""; hl([]); active(null); }
+}
+
+/* ---------- page web affichée (mêmes dessins que jauge() et courbe() du programme) ---------- */
+function svgJauge(titre,v,mn,mx,dec,u,c){
+  const k=clamp((v-mn)/(mx-mn),0.001,1), a=Math.PI*(1-k), x=100+80*Math.cos(a), y=100-80*Math.sin(a);
+  return `<svg viewBox="0 0 200 140" role="img" aria-label="${titre} : ${v.toFixed(dec)} ${u}">`+
+    `<path d="M20,100 A80,80 0 0 1 180,100" fill="none" stroke="#ddd" stroke-width="16"/>`+
+    `<path d="M20,100 A80,80 0 0 1 ${x.toFixed(1)},${y.toFixed(1)}" fill="none" stroke="${c}" stroke-width="16"/>`+
+    `<text x="100" y="92" text-anchor="middle" font-size="26" font-weight="bold">${v.toFixed(dec)} ${u}</text>`+
+    `<text x="20" y="120" text-anchor="middle" font-size="12">${mn}</text><text x="180" y="120" text-anchor="middle" font-size="12">${mx}</text>`+
+    `<text x="100" y="135" text-anchor="middle" font-size="14">${titre}</text></svg>`;
+}
+function svgCourbe(hist){
+  let s=`<svg viewBox="0 0 680 260" style="width:100%;max-width:680px" role="img" aria-label="Historique : ${hist.length} mesures">`;
+  for(let i=0;i<=4;i++){ const y=220-50*i;
+    s+=`<line x1="40" y1="${y}" x2="640" y2="${y}" stroke="#ddd"/><text x="34" y="${y+4}" text-anchor="end" font-size="11" fill="#c2410c">${(i*12.5).toFixed(1)}</text><text x="646" y="${y+4}" font-size="11" fill="#2b5fd6">${i*25}</text>`; }
+  const pts=(k,max)=>hist.map((m,i)=>`${(40+600*i/(NB_MAX-1)).toFixed(1)},${(220-m[k]*200/max).toFixed(1)}`).join(" ");
+  s+=`<polyline points="${pts("t",50)}" fill="none" stroke="#c2410c" stroke-width="2"/><polyline points="${pts("h",100)}" fill="none" stroke="#2b5fd6" stroke-width="2"/>`;
+  s+=`<text x="40" y="245" font-size="12" fill="#c2410c">— température (°C)</text><text x="640" y="245" text-anchor="end" font-size="12" fill="#2b5fd6">humidité (%) —</text></svg>`;
+  return s;
+}
+let lastWeb="";
+function renderWeb(){
+  const P=S.page;
+  let html, st, cls="";
+  if(S.pageErr){ html='<div class="browser-empty bad">Page inaccessible<br><small>Le navigateur n\'a reçu aucune réponse de '+IP+'</small></div>'; st="page inaccessible"; cls="bad"; }
+  else if(!P){ html='<div class="browser-empty">Aucune page ouverte : démarrez la carte, puis cliquez sur « 2. Ouvrir la page ».</div>'; st="aucune page"; }
+  else {
+    html='<div class="browser-body"><h3>Station météo</h3>';
+    html+=P.err?'<p class="err">Erreur de lecture du DHT11 !</p>'
+      :'<div class="gauges">'+svgJauge("Température",P.t,0,50,1,"°C","#c2410c")+svgJauge("Humidité",P.h,0,100,0,"%","#2b5fd6")+'</div>';
+    html+=`<p>Dernière mesure il y a ${P.age} s</p><h4>Historique (${P.hist.length} mesures, 30 min au maximum)</h4>`+svgCourbe(P.hist);
+    html+=`<p><a role="button" tabindex="0" id="csvLink"${S.busy?' aria-disabled="true"':''}>Télécharger les mesures (fichier CSV)</a></p></div>`;
+    st=S.auto?"rechargée toutes les 5 s":"affichée"; cls="ok";
+  }
+  $("webAddr").textContent=(P||S.pageErr)?"http://"+IP+"/":"saisir l'adresse…";
+  const w=$("webStatus"); w.className="pill "+cls; w.textContent=st;
+  if(html!==lastWeb){ $("webBody").innerHTML=html; lastWeb=html; }
+  else { const l=$("csvLink"); if(l){ if(S.busy) l.setAttribute("aria-disabled","true"); else l.removeAttribute("aria-disabled"); } }
+}
+function csvText(){
+  const v=x=>x.toFixed(1).replace(".",",");
+  return ["temps (s);temperature (°C);humidite (%)"].concat(S.hist.map(m=>`${m.s};${v(m.t)};${v(m.h)}`)).join("\n");
+}
+function downloadCSV(){
+  run(async (tok,alive)=>{
+    scenario("télécharger le fichier CSV");
+    say(`Vous cliquez sur le lien « Télécharger les mesures » : le navigateur envoie la requête <b>GET /mesures.csv</b> à la carte.`,{node:"phone",code:[]});
+    await wait(1300,tok);
+    if(!(await request(alive,"/mesures.csv"))){
+      await wait(1400,tok);
+      say("Le téléchargement échoue : aucun fichier n'est reçu. Le fichier CSV ne peut être récupéré que depuis le <b>réseau local</b>, quand la carte est joignable.",{alert:true,node:"phone"});
+      await wait(1600,tok); return;
+    }
+    say("<code>server.handleClient()</code> reçoit <code>GET /mesures.csv</code> et appelle <code>handleCSV()</code>.",{code:["handle","csv"],node:"esp"});
+    await wait(1500,tok);
+    say(`La boucle <code>for</code> écrit une ligne par mesure de l'historique (${S.hist.length} ligne${S.hist.length>1?"s":""}) : le temps en secondes depuis le démarrage, la température et l'humidité, séparés par des <b>points-virgules</b>, avec une virgule décimale pour le tableur.`,{code:["csvLoop"],node:"esp"});
+    await wait(2200,tok);
+    say("L'en-tête <code>Content-Disposition: attachment</code> indique au navigateur qu'il doit <b>enregistrer un fichier</b> (mesures.csv) au lieu de l'afficher.",{code:["csvSend"],node:"esp"});
+    apPulse(true);
+    await movePacket(2,0,"200 OK · mesures.csv","ret",alive);
+    apPulse(false);
+    S.csv=csvText();
+    $("csvTitle").textContent=`Fichier mesures.csv téléchargé (${S.hist.length} mesure${S.hist.length>1?"s":""}) : à ouvrir avec un tableur`;
+    $("csvView").textContent=S.csv;
+    say("Le fichier est enregistré sur le téléphone (dossier Téléchargements). Il s'ouvre avec un tableur (Excel, LibreOffice Calc) pour tracer un graphique ou calculer une moyenne. Attention : l'historique est dans la <b>mémoire de la carte</b> ; si elle redémarre, il est perdu.",{node:"phone",code:[]});
+    await wait(1600,tok);
+  });
+}
+
+function reset(){
+  S.token++; S.qtok++; S.busy=false; clearTimeout(autoTimer);
+  if(nextResolve){ const r=nextResolve; nextResolve=null; r(); }
+  if(layers.pk) layers.pk.innerHTML="";
+  Object.assign(S,{booted:false,wifi:true,connected:false,server:false,g4:false,wire:true,auto:false,
+    blow:{t:0,h:0},noise:{t:0,h:0},sens:null,time:0,lastMeas:null,board:{t:0,h:0,err:true},hist:[],csv:null,page:null,pageErr:false});
+  $("csvTitle").textContent="Fichier mesures.csv : pas encore téléchargé"; $("csvView").textContent="—";
+  serialEl.innerHTML="";
+  $("scenario").textContent="Prêt";
+  $("steps").innerHTML='<li class="current">Cliquez sur « 1. Démarrer la carte » : l\'ESP32 va démarrer le capteur, se connecter au Wi-Fi et démarrer son serveur web.</li>';
+  hl([]); active(null); apPulse(false); $("nextBtn").disabled=true; render();
+}
+
+$("bootBtn").addEventListener("click",boot);
+$("pageBtn").addEventListener("click",openPage);
+$("measBtn").addEventListener("click",measureNext);
+$("autoBtn").addEventListener("click",toggleAuto);
+$("blowBtn").addEventListener("click",blow);
+$("wireBtn").addEventListener("click",toggleWire);
+$("wifiBtn").addEventListener("click",toggleWifi);
+$("g4").addEventListener("change",toggle4G);
+$("resetBtn").addEventListener("click",reset);
+$("csvBtn").addEventListener("click",downloadCSV);
+$("webBody").addEventListener("click",e=>{ if(e.target.id==="csvLink"&&!S.busy) downloadCSV(); });
+$("webBody").addEventListener("keydown",e=>{ if(e.target.id==="csvLink"&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); if(!S.busy) downloadCSV(); } });
+$("airT").addEventListener("input",e=>{ S.base.t=parseFloat(e.target.value); $("airTo").textContent=fr(S.base.t,1)+" °C"; render(); });
+$("airH").addEventListener("input",e=>{ S.base.h=parseFloat(e.target.value); $("airHo").textContent=fr(S.base.h,0)+" %"; render(); });
+$("nextBtn").addEventListener("click",()=>{ if(nextResolve){ const r=nextResolve; nextResolve=null; $("nextBtn").disabled=true; r(); } });
+$("stepMode").addEventListener("change",e=>{
+  $("hint").innerHTML=e.target.checked?"Cliquez sur <b>Étape suivante</b> pour avancer.":"Cochez <b>Pas à pas</b> pour avancer à votre rythme.";
+  if(!e.target.checked&&nextResolve){ const r=nextResolve; nextResolve=null; $("nextBtn").disabled=true; r(); }
+});
+let rt; new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!S.busy) build(); },120); }).observe(svg.parentElement);
+build(); hl([]);
+})();
+</script>
+</body>
+</html>

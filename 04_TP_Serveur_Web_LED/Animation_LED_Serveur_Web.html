@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED ESP32 serveur web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --surface2:#F5F8FA; --ink:#14283B; --muted:#586A7B; --line:#C8D2DB;
+  --cmd:#2B5FD6; --cmd-soft:#DCE6FB; --ret:#12845A; --ret-soft:#D6F0E4;
+  --copper:#B5652D; --led:#E3302B; --warn:#B4400C; --warn-soft:#FCE6DA;
+  --pcb:#1F3A52; --chip:#BCC5CD; --codebg:#F3F6F8; --hl:#FFF1C9; --lan:#7C8FA3;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+    --cmd:#79A2FF; --cmd-soft:#1D2E52; --ret:#45C993; --ret-soft:#153A2C;
+    --copper:#DB8C50; --led:#FF5A4F; --warn:#F2915A; --warn-soft:#3D2418;
+    --pcb:#284B69; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419; --lan:#5F7387;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1822; --surface:#152230; --surface2:#1A2939; --ink:#E2EAF1; --muted:#95A6B5; --line:#2C3E50;
+  --cmd:#79A2FF; --cmd-soft:#1D2E52; --ret:#45C993; --ret-soft:#153A2C;
+  --copper:#DB8C50; --led:#FF5A4F; --warn:#F2915A; --warn-soft:#3D2418;
+  --pcb:#284B69; --chip:#8E9BA7; --codebg:#111D29; --hl:#3B3419; --lan:#5F7387;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 48px;display:grid;gap:18px}
+header{display:grid;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.intro{margin:0;max-width:72ch;color:var(--muted)}
+.intro a{color:var(--cmd)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:22px;height:0;border-top:3px dashed currentColor;display:inline-block}
+.legend .c{color:var(--cmd)} .legend .r{color:var(--ret)} .legend .w{color:var(--copper)} .legend .w i{border-top-style:solid}
+.legend b{color:var(--ink);font-weight:500}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.controls .sep{width:1px;align-self:stretch;background:var(--line)}
+button,select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:8px 13px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:focus-visible,select:focus-visible,input:focus-visible,.phone-hit:focus-visible{outline:2px solid var(--cmd);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+#wifiBtn[aria-pressed="false"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+label.inline{display:inline-flex;align-items:center;gap:7px;font-size:14px;cursor:pointer}
+.spacer{flex:1}
+
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+#stage{width:100%;height:auto;display:block}
+.status{display:flex;flex-wrap:wrap;gap:8px;padding:4px 6px 6px}
+.pill{font-family:var(--mono);font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.pill b{font-weight:500;color:var(--ink)}
+.pill.ok{background:var(--ret-soft);border-color:var(--ret);color:var(--ret)} .pill.ok b{color:var(--ret)}
+.pill.bad{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)} .pill.bad b{color:var(--warn)}
+
+.panels{display:grid;grid-template-columns:1.05fr 1fr;gap:18px}
+@media (max-width:860px){.panels{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px;align-content:start;min-width:0}
+.panel h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+.scenario{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#steps{margin:0;padding-left:24px;display:grid;gap:7px}
+#steps li{color:var(--muted)}
+#steps li.current{color:var(--ink);font-weight:500}
+#steps li.current::marker{color:var(--copper);font-weight:700}
+#steps li.alert{color:var(--warn)}
+#steps code{font-family:var(--mono);font-size:13px}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+.hint b{color:var(--ink)}
+.next-row{display:flex;gap:10px;align-items:center}
+pre.code{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:12.5px;line-height:1.55;overflow:auto;max-height:430px}
+pre.code span{display:block;padding:0 14px;white-space:pre;border-left:3px solid transparent}
+pre.code span.on{background:var(--hl);border-left-color:var(--copper)}
+pre.code .cm{color:var(--muted);font-style:normal}
+.vars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.var{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.var small{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.var code{font-family:var(--mono);font-size:14px}
+.var.cmd code{color:var(--cmd)} .var.ret code{color:var(--ret)}
+.var.flash{animation:flash .9s ease}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--copper)}100%{box-shadow:0 0 0 0 transparent}}
+
+.compare{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px}
+.compare h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--display);font-weight:600;font-size:16px;background:var(--surface2)}
+tbody th{font-weight:600;width:22%}
+
+/* SVG */
+.n-label{font-family:var(--display);font-weight:600;font-size:17px;fill:var(--ink)}
+.n-sub{font-family:var(--body);font-size:12px;fill:var(--muted)}
+.l-label{font-family:var(--mono);font-size:11.5px;fill:var(--muted)}
+.lan-box{fill:none;stroke:var(--lan);stroke-width:1.5;stroke-dasharray:3 6}
+.lan-t{font-family:var(--mono);font-size:12px;fill:var(--lan)}
+.lane-cmd{stroke:var(--cmd);stroke-width:2;stroke-dasharray:6 6;fill:none;opacity:.55}
+.lane-ret{stroke:var(--ret);stroke-width:2;stroke-dasharray:6 6;fill:none;opacity:.55}
+.arrow-cmd{fill:var(--cmd);opacity:.7}.arrow-ret{fill:var(--ret);opacity:.7}
+.wlink.off .lane-cmd,.wlink.off .lane-ret{stroke:var(--line);opacity:1}
+.cut{font-family:var(--body);font-weight:700;font-size:26px;fill:var(--warn)}
+.wire{stroke:var(--copper);stroke-width:3;fill:none;stroke-linecap:round}
+.flow{stroke:var(--led);stroke-width:3;fill:none;stroke-dasharray:3 12;opacity:0}
+.flow.on{opacity:.95;animation:flow .7s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-15}}
+.dev-body{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.g4 .dev-body{stroke-dasharray:5 4}
+.screen{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.url{fill:var(--surface2);stroke:var(--line);stroke-width:.8}
+.tiny{font-family:var(--mono);font-size:7px;fill:var(--muted)}
+.pg-title{font-family:var(--body);font-weight:600;font-size:8.5px;fill:var(--ink)}
+.pg-hint{font-family:var(--body);font-size:5.6px;fill:var(--muted)}
+.pg-voyant{fill:#8A8A8A;stroke:var(--ink);stroke-width:1;transition:fill .25s}
+.pg-voyant.on{fill:var(--led);filter:drop-shadow(0 0 3px var(--led))}
+.pg-ring{fill:none;stroke:var(--cmd);stroke-width:1.6;stroke-dasharray:3 2;opacity:0;transform-box:fill-box;transform-origin:center}
+.pg-ring.invite{opacity:1;animation:pgRing 1.4s ease-in-out infinite}
+@keyframes pgRing{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.18);opacity:.35}}
+@media (prefers-reduced-motion: reduce){.pg-ring.invite{animation:none}}
+.pg-err{font-family:var(--body);font-weight:600;font-size:7.5px;fill:var(--warn)}
+.badge4g{fill:var(--warn)} .badge4g-t{font-family:var(--mono);font-size:9px;font-weight:500;fill:#fff}
+.router{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ant{stroke:var(--ink);stroke-width:2.5;stroke-linecap:round}
+.arc{fill:none;stroke:var(--cmd);stroke-width:2.2;stroke-linecap:round}
+.ap.off .arc{stroke:var(--line)}
+.ap.pulse .arc{animation:pulse .9s ease-in-out infinite}
+.ap.pulse .arc:nth-child(2){animation-delay:.15s}.ap.pulse .arc:nth-child(3){animation-delay:.3s}
+@keyframes pulse{50%{opacity:.2}}
+.rled{fill:var(--ret)} .ap.off .rled{fill:var(--warn)}
+.pcb{fill:var(--pcb)} .shield{fill:var(--chip)} .chip-t{font-family:var(--mono);font-size:9px;font-weight:500;fill:#1B2833}
+.pin{fill:var(--copper)} .meander{stroke:var(--copper);stroke-width:1.6;fill:none}
+.usb{fill:var(--chip)}
+.esp-led{fill:#6B7885;transition:fill .3s} .online .esp-led{fill:#3FE09A}
+.ip-t{font-family:var(--mono);font-size:10.5px;font-weight:500;fill:var(--ret)}
+.led-dome{fill:var(--led);opacity:.28;transition:opacity .25s}
+.led-rim{fill:var(--led);opacity:.45}
+.leg{stroke:var(--muted);stroke-width:2}
+.led-glow{opacity:0;transition:opacity .3s}
+.led-on .led-dome{opacity:1} .led-on .led-glow{opacity:1}
+.res-body{fill:#D9C39A;stroke:#8C7651;stroke-width:1}
+.node.active .halo{opacity:1}
+.halo{fill:none;stroke:var(--copper);stroke-width:2;stroke-dasharray:4 5;opacity:0;transition:opacity .25s}
+.pk-dot-cmd{fill:var(--cmd)} .pk-dot-ret{fill:var(--ret)} .pk-dot-sys{fill:var(--copper)}
+.pk-pill{fill:var(--surface);stroke-width:1.5}
+.pk-cmd .pk-pill{stroke:var(--cmd)} .pk-ret .pk-pill{stroke:var(--ret)} .pk-sys .pk-pill{stroke:var(--copper)}
+.pk-t{font-family:var(--mono);font-size:11.5px;fill:var(--ink)}
+.phone-hit{cursor:pointer}
+@media (prefers-reduced-motion: reduce){.flow.on,.ap.pulse .arc{animation:none}}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">TP IoT · ESP32 serveur web</div>
+    <h1>Piloter la LED par une page web hébergée sur l'ESP32</h1>
+    <p class="intro">Ici, pas de cloud : l'ESP32 est elle-même un <b>serveur web</b> sur le réseau local. Le navigateur du téléphone lui envoie des requêtes HTTP à son adresse IP, et la carte répond en renvoyant une page qui affiche l'état de la LED. À comparer avec <a href="../04_1_TP_Arduino_Cloud_LED/Animation_LED_Arduino_Cloud.html">la version Arduino Cloud</a>.</p>
+    <div class="legend" aria-label="Légende">
+      <span class="c"><i></i><b>Requête HTTP</b>&nbsp;navigateur → carte</span>
+      <span class="r"><i></i><b>Réponse HTTP</b>&nbsp;carte → navigateur (état de la LED)</span>
+      <span class="w"><i></i><b>Fil électrique</b>&nbsp;GPIO 26 → résistance → LED</span>
+    </div>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="Commandes de l'animation">
+    <button id="bootBtn" class="primary">1. Démarrer la carte</button>
+    <button id="pageBtn">2. Ouvrir la page</button>
+    <button id="wifiBtn" aria-pressed="true">3. Couper le Wi-Fi</button>
+    <label class="inline"><input type="checkbox" id="g4"> Téléphone en 4G</label>
+    <span class="sep" aria-hidden="true"></span>
+    <label class="inline"><input type="checkbox" id="stepMode"> Pas à pas</label>
+    <label class="inline" for="speed">Vitesse
+      <select id="speed"><option value="0.6">Lente</option><option value="1" selected>Normale</option><option value="1.8">Rapide</option></select>
+    </label>
+    <span class="spacer"></span>
+    <button id="resetBtn">Recommencer</button>
+  </div>
+
+  <div class="stage-card">
+    <svg id="stage" role="img" aria-label="Réseau local : téléphone avec navigateur, point d'accès Wi-Fi, carte ESP32 serveur web et LED"></svg>
+    <div class="status" aria-live="polite">
+      <span class="pill" id="stBoard">Carte : <b>éteinte</b></span>
+      <span class="pill ok" id="stWifi">Wi-Fi : <b>actif</b></span>
+      <span class="pill ok" id="stPhone">Téléphone : <b>Wi-Fi local</b></span>
+      <span class="pill" id="stLed">LED : <b>éteinte</b></span>
+    </div>
+  </div>
+
+  <div class="panels">
+    <section class="panel" aria-labelledby="hSteps">
+      <div class="scenario" id="scenario">Prêt</div>
+      <h2 id="hSteps">Ce qui se passe</h2>
+      <ol id="steps" aria-live="polite">
+        <li class="current">Cliquez sur « 1. Démarrer la carte » : l'ESP32 va se connecter au Wi-Fi et démarrer son serveur web.</li>
+      </ol>
+      <div class="next-row">
+        <button id="nextBtn" disabled>Étape suivante →</button>
+        <p class="hint" id="hint">Cochez <b>Pas à pas</b> pour avancer à votre rythme.</p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="hCode">
+      <h2 id="hCode">Code exécuté sur l'ESP32</h2>
+      <pre class="code" id="code"></pre>
+      <div class="vars">
+        <div class="var" id="vIp"><small>Carte · adresse IP</small><code>—</code></div>
+        <div class="var ret" id="vEtat"><small>Carte · etat_led</small><code>false</code></div>
+        <div class="var" id="vPin"><small>Carte · broche GPIO 26</small><code>0 V (LOW)</code></div>
+        <div class="var cmd" id="vPage"><small>Téléphone · page affichée</small><code>aucune</code></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="compare" aria-labelledby="hCmp">
+    <h2 id="hCmp">Arduino Cloud ou serveur web ?</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th></th><th>Arduino Cloud</th><th>Serveur web sur l'ESP32</th></tr></thead>
+        <tbody>
+          <tr><th>Intermédiaire</th><td>La plateforme Arduino Cloud, sur Internet</td><td>Aucun : le navigateur parle directement à la carte</td></tr>
+          <tr><th>D'où piloter la LED ?</th><td>De partout, avec une connexion Internet</td><td>Seulement depuis le réseau local (même Wi-Fi)</td></tr>
+          <tr><th>Adresse de l'objet</th><td>Un compte et un tableau de bord</td><td>L'adresse IP locale de la carte (ex. 192.168.1.42)</td></tr>
+          <tr><th>Retour d'état</th><td>Envoyé automatiquement par la carte au tableau de bord</td><td>Contenu dans la réponse HTTP : il faut recharger la page pour voir un changement fait ailleurs</td></tr>
+          <tr><th>Si la carte est hors ligne</th><td>La commande est gardée dans le cloud</td><td>La requête échoue : la commande est perdue</td></tr>
+          <tr><th>Sécurité</th><td>Compte, clé secrète de la carte, échanges chiffrés</td><td>Dans ce code simple : pas de mot de passe, HTTP non chiffré</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <footer>Animation simplifiée : l'adresse IP 192.168.1.42 est un exemple, la vraie adresse s'affiche dans le Serial Monitor.</footer>
+</div>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("stage");
+const $=id=>document.getElementById(id);
+const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const IP="192.168.1.42";
+
+const S={booted:false, wifi:true, connected:false, server:false, g4:false,
+         page:null, pageErr:false, pin:false, etat:false, busy:false, token:0, vertical:null};
+
+/* ---------- code ---------- */
+const CODE=[
+ ["#include <WiFi.h>",""],
+ ["#include <WebServer.h>",""],
+ ["",""],
+ ['const char* ssid = "NOM_DU_RESEAU";',"id"],
+ ['const char* password = "MOT_DE_PASSE";',"id"],
+ ["",""],
+ ["const int LED_PIN = 26;",""],
+ ["WebServer server(80);          // serveur web, port 80",""],
+ ["bool etat_led = false;",""],
+ ["",""],
+ ["String page() {","page"],
+ ["  String html = \"<!DOCTYPE html><html><head><meta charset='utf-8'>\";","page"],
+ ["  html += \"<meta name='viewport' content='width=device-width'></head><body>\";","page"],
+ ["  html += \"<h1>LED : \";","page"],
+ ["  html += etat_led ? \"allumée\" : \"éteinte\";","page"],
+ ["  html += \"</h1>\";","page"],
+ ["  // Voyant cliquable : il ouvre /off si la LED est allumée, /on si elle est éteinte","page"],
+ ["  html += etat_led ? \"<a href='/off'>\" : \"<a href='/on'>\";","page"],
+ ["  html += \"<div style='width:80px;height:80px;border-radius:50%;border:3px solid #333;background:\";","page"],
+ ["  html += etat_led ? \"#ff2020;box-shadow:0 0 30px #ff2020\" : \"#555\";","page"],
+ ["  html += \"'></div></a>\";","page"],
+ ["  html += \"<p>Appuyez sur le voyant pour \";","page"],
+ ["  html += etat_led ? \"éteindre\" : \"allumer\";","page"],
+ ["  html += \" la LED.</p>\";","page"],
+ ["  html += \"</body></html>\";","page"],
+ ["  return html;","page"],
+ ["}","page"],
+ ["",""],
+ ["void handleRoot() {","root"],
+ ['  server.send(200, "text/html; charset=utf-8", page());',"root"],
+ ["}",""],
+ ["",""],
+ ["void handleOn() {","on"],
+ ["  digitalWrite(LED_PIN, HIGH);","high"],
+ ["  etat_led = digitalRead(LED_PIN);","readOn"],
+ ['  server.send(200, "text/html; charset=utf-8", page());',"sendOn"],
+ ["}",""],
+ ["",""],
+ ["void handleOff() {","off"],
+ ["  digitalWrite(LED_PIN, LOW);","low"],
+ ["  etat_led = digitalRead(LED_PIN);","readOff"],
+ ['  server.send(200, "text/html; charset=utf-8", page());',"sendOff"],
+ ["}",""],
+ ["",""],
+ ["void setup() {","setup"],
+ ["  Serial.begin(115200);","setup"],
+ ["  pinMode(LED_PIN, OUTPUT);","setup"],
+ ["  digitalWrite(LED_PIN, LOW);","setup"],
+ ["",""],
+ ["  WiFi.begin(ssid, password);   // connexion au Wi-Fi","wbegin"],
+ ['  Serial.print("Connexion au Wi-Fi");',"wbegin"],
+ ["  while (WiFi.status() != WL_CONNECTED) {","wwait"],
+ ["    delay(500);","wwait"],
+ ['    Serial.print(".");',"wwait"],
+ ["  }","wwait"],
+ ["  Serial.println();","ip"],
+ ['  Serial.print("Adresse IP : ");',"ip"],
+ ["  Serial.println(WiFi.localIP()); // adresse à taper","ip"],
+ ["",""],
+ ['  server.on("/", handleRoot);   // adresse → fonction',"routes"],
+ ['  server.on("/on", handleOn);',"routes"],
+ ['  server.on("/off", handleOff);',"routes"],
+ ["  server.begin();               // démarrage du serveur","sbegin"],
+ ["}",""],
+ ["",""],
+ ["void loop() {","loop"],
+ ["  server.handleClient();        // traite les requêtes","handle"],
+ ["}",""]
+];
+const codeEl=$("code");
+CODE.forEach(([t,k])=>{
+  const s=document.createElement("span"); s.dataset.k=k;
+  const i=t.indexOf("//");
+  if(i>=0){ s.textContent=t.slice(0,i); const c=document.createElement("em"); c.className="cm"; c.textContent=t.slice(i); s.appendChild(c); }
+  else s.textContent=t||" ";
+  codeEl.appendChild(s);
+});
+function hl(keys){
+  keys=keys||[];
+  codeEl.querySelectorAll("span[data-k]").forEach(s=>s.classList.toggle("on",!!s.dataset.k&&keys.includes(s.dataset.k)));
+  const f=codeEl.querySelector("span.on");
+  if(f){ codeEl.scrollTo({top:Math.max(0,f.offsetTop-codeEl.clientHeight/3),behavior:reduced?"auto":"smooth"}); }
+}
+
+/* ---------- geometry ---------- */
+const NODES=[
+  {id:"phone",t:"Navigateur web",s:"téléphone ou ordinateur"},
+  {id:"ap",t:"Point d'accès Wi-Fi",s:"box ou partage de connexion"},
+  {id:"esp",t:"ESP32",s:"serveur web"},
+  {id:"led",t:"LED",s:"actionneur"}
+];
+let G;
+function geom(vertical){
+  if(!vertical){
+    const xs=[120,395,670,905];
+    return {vertical,w:1010,h:330,half:64,lane:20,c:xs.map(x=>({x,y:140})),
+      off:(p,k)=>({x:p.x,y:p.y+(k==="ret"?G.lane:-G.lane)}),
+      nlab:p=>({x:p.x,y:p.y+86,a:"middle",dy:18}),
+      llab:(a,b)=>({x:(a.x+b.x)/2,y:a.y-40,a:"middle"}),
+      along:(p,d)=>({x:p.x+d,y:p.y}),
+      lan:{x:10,y:10,w:990,h:305,tx:26,ty:302}};
+  }
+  const ys=[90,330,570,800];
+  return {vertical,w:420,h:930,half:62,lane:20,c:ys.map(y=>({x:115,y})),
+    off:(p,k)=>({x:p.x+(k==="ret"?G.lane:-G.lane),y:p.y}),
+    nlab:p=>({x:205,y:p.y-4,a:"start",dy:18}),
+    llab:(a,b)=>({x:160,y:(a.y+b.y)/2+4,a:"start"}),
+    along:(p,d)=>({x:p.x,y:p.y+d}),
+    lan:{x:6,y:6,w:408,h:915,tx:18,ty:912}};
+}
+function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function txt(parent,x,y,s,cls,anchor){ const t=el("text",{x,y,class:cls,"text-anchor":anchor||"middle"},parent); t.textContent=s; return t; }
+
+/* ---------- icons ---------- */
+function iconPhone(g){
+  const p=el("g",{id:"phoneIcon"},g);
+  el("rect",{x:-36,y:-56,width:72,height:112,rx:11,class:"dev-body"},p);
+  el("rect",{x:-29,y:-46,width:58,height:88,rx:4,class:"screen"},p);
+  el("rect",{x:-26,y:-43,width:52,height:11,rx:5.5,class:"url"},p);
+  txt(p,0,-35.5,"","tiny").id="urlTxt";
+  const pg=el("g",{id:"pgContent"},p);
+  txt(pg,0,-16,"LED : éteinte","pg-title").id="pgTitle";
+  el("circle",{cx:0,cy:6,r:16,class:"pg-ring",id:"pgRing"},pg);
+  el("circle",{cx:0,cy:6,r:12,class:"pg-voyant",id:"pgVoyant"},pg);
+  txt(pg,0,29,"appuyez sur le voyant","pg-hint").id="pgHint";
+  txt(p,0,22,"","pg-err").id="pgErr";
+  txt(p,0,31,"","pg-err").id="pgErr2";
+  el("circle",{cx:0,cy:49,r:3,class:"tiny"},p);
+  const b=el("g",{id:"badge4g",transform:"translate(30,-54)"},p);
+  el("rect",{x:-4,y:-9,width:28,height:18,rx:9,class:"badge4g"},b);
+  txt(b,10,4,"4G","badge4g-t");
+}
+function iconAP(g){
+  const a=el("g",{id:"apIcon",class:"ap"},g);
+  const arcs=el("g",{},a);
+  [9,17,25].forEach(r=>el("path",{d:`M ${-r} -16 A ${r} ${r} 0 0 1 ${r} -16`,class:"arc"},arcs));
+  el("line",{x1:-26,y1:4,x2:-34,y2:-30,class:"ant"},a);
+  el("line",{x1:26,y1:4,x2:34,y2:-30,class:"ant"},a);
+  el("rect",{x:-42,y:2,width:84,height:28,rx:6,class:"router"},a);
+  [-24,-14,-4].forEach(x=>el("circle",{cx:x,cy:16,r:2.6,class:"rled"},a));
+  txt(a,20,20,"Wi-Fi","tiny");
+}
+function iconESP(g){
+  const b=el("g",{id:"espIcon"},g);
+  el("rect",{x:-58,y:-9,width:10,height:18,rx:2,class:"usb"},b);
+  el("rect",{x:-50,y:-34,width:100,height:68,rx:5,class:"pcb"},b);
+  for(let x=-42;x<=42;x+=8){ el("circle",{cx:x,cy:-28,r:1.8,class:"pin"},b); el("circle",{cx:x,cy:28,r:1.8,class:"pin"},b); }
+  el("rect",{x:-12,y:-20,width:50,height:38,rx:2,class:"shield"},b);
+  txt(b,13,3,"ESP32","chip-t");
+  el("path",{d:"M 40 -20 v 8 h 6 v 6 h -6 v 6 h 6 v 6 h -6 v 8",class:"meander"},b);
+  el("circle",{cx:-38,cy:14,r:3.4,class:"esp-led"},b);
+  txt(g,0,50,"","ip-t").id="ipTxt";
+}
+function iconLED(g){
+  const l=el("g",{id:"ledIcon"},g);
+  el("circle",{cx:0,cy:-6,r:42,fill:"url(#glow)",class:"led-glow"},l);
+  el("line",{x1:-6,y1:14,x2:-6,y2:44,class:"leg"},l);
+  el("line",{x1:6,y1:14,x2:6,y2:38,class:"leg"},l);
+  el("path",{d:"M -13 10 V -8 A 13 13 0 0 1 13 -8 V 10 Z",class:"led-dome"},l);
+  el("rect",{x:-16,y:9,width:32,height:5,rx:1.5,class:"led-rim"},l);
+}
+const ICON={phone:iconPhone,ap:iconAP,esp:iconESP,led:iconLED};
+
+let layers={};
+function build(){
+  const vertical=svg.clientWidth<640;
+  if(vertical===S.vertical) return;
+  S.vertical=vertical; G=geom(vertical);
+  svg.setAttribute("viewBox",`0 0 ${G.w} ${G.h}`);
+  svg.innerHTML="";
+  const defs=el("defs",{},svg);
+  const rg=el("radialGradient",{id:"glow"},defs);
+  el("stop",{offset:"0%","stop-color":"var(--led)","stop-opacity":"0.55"},rg);
+  el("stop",{offset:"100%","stop-color":"var(--led)","stop-opacity":"0"},rg);
+  const mk=(id,cls)=>{ const m=el("marker",{id,viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs); el("path",{d:"M0,0 L10,5 L0,10 z",class:cls},m); };
+  mk("aCmd","arrow-cmd"); mk("aRet","arrow-ret");
+
+  const L=G.lan;
+  el("rect",{x:L.x,y:L.y,width:L.w,height:L.h,rx:16,class:"lan-box"},svg);
+  txt(svg,L.tx,L.ty-8,"Réseau local Wi-Fi · 192.168.1.x","lan-t","start");
+
+  layers.links=el("g",{},svg); layers.nodes=el("g",{},svg); layers.pk=el("g",{},svg);
+  const C=G.c;
+  for(let i=0;i<2;i++){
+    const a=C[i],b=C[i+1];
+    const g=el("g",{class:"wlink",id:"link"+i},layers.links);
+    const a1=G.along(a,G.half),b1=G.along(b,-G.half);
+    const ca=G.off(a1,"cmd"),cb=G.off(b1,"cmd"),ra=G.off(a1,"ret"),rb=G.off(b1,"ret");
+    el("line",{x1:ca.x,y1:ca.y,x2:cb.x,y2:cb.y,class:"lane-cmd","marker-end":"url(#aCmd)"},g);
+    el("line",{x1:rb.x,y1:rb.y,x2:ra.x,y2:ra.y,class:"lane-ret","marker-end":"url(#aRet)"},g);
+    const P=G.llab(a,b); const t=txt(g,P.x,P.y,"Wi-Fi 2,4 GHz","l-label",P.a); t.id="llab"+i;
+    const m={x:(a1.x+b1.x)/2,y:(a1.y+b1.y)/2}; const c=txt(g,m.x,m.y+9,"✕","cut"); c.id="cut"+i; c.style.display="none";
+  }
+  {
+    const a=G.along(C[2],G.half-6),b=G.along(C[3],-18);
+    const g=el("g",{},layers.links);
+    el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"wire"},g);
+    el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"flow",id:"flow"},g);
+    const m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+    const r=el("g",{transform:`translate(${m.x},${m.y}) rotate(${G.vertical?90:0})`},g);
+    el("rect",{x:-15,y:-6,width:30,height:12,rx:4,class:"res-body"},r);
+    [["-8","#C62828"],["-3","#C62828"],["2","#6D4C2F"],["9","#C9A227"]].forEach(([x,c])=>el("rect",{x,y:-6,width:3,height:12,fill:c},r));
+    const P=G.llab(C[2],C[3]); txt(g,P.x,P.y,"GPIO 26 · 220 Ω","l-label",P.a);
+  }
+  NODES.forEach((n,i)=>{
+    const p=C[i];
+    const g=el("g",{class:"node",id:"n-"+n.id,transform:`translate(${p.x},${p.y})`},layers.nodes);
+    el("rect",{x:-64,y:-68,width:128,height:136,rx:14,class:"halo"},g);
+    ICON[n.id](g);
+    const P=G.nlab(p);
+    txt(layers.nodes,P.x,P.y,n.t,"n-label",P.a);
+    txt(layers.nodes,P.x,P.y+P.dy,n.s,"n-sub",P.a);
+    if(n.id==="phone"){
+      g.classList.add("phone-hit"); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+      g.setAttribute("aria-label","Appuyer sur le voyant de la page web");
+      const act=()=>{ if(S.busy) return; if(!S.page) openPage(); else toggleLed(); };
+      g.addEventListener("click",act);
+      g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); act(); }});
+    }
+  });
+  render();
+}
+
+/* ---------- render ---------- */
+const nextV=()=>S.page!=="allumée";
+function render(){
+  const q=id=>svg.querySelector("#"+id);
+  q("ledIcon")?.classList.toggle("led-on",S.pin);
+  q("flow")?.classList.toggle("on",S.pin);
+  q("espIcon")?.classList.toggle("online",S.connected);
+  q("apIcon")?.classList.toggle("off",!S.wifi);
+  q("link0")?.classList.toggle("off",!S.wifi||S.g4);
+  q("link1")?.classList.toggle("off",!S.wifi);
+  if(q("cut0")) q("cut0").style.display=(!S.wifi||S.g4)?"":"none";
+  if(q("cut1")) q("cut1").style.display=!S.wifi?"":"none";
+  if(q("llab0")) q("llab0").textContent=S.g4?"4G → Internet (hors réseau local)":"Wi-Fi 2,4 GHz";
+  q("phoneIcon")?.classList.toggle("g4",S.g4);
+  if(q("badge4g")) q("badge4g").style.display=S.g4?"":"none";
+  if(q("ipTxt")) q("ipTxt").textContent=S.connected?IP:"";
+  if(q("urlTxt")) q("urlTxt").textContent=S.page||S.pageErr?IP+(S.lastPath||""):"saisir l'adresse…";
+  if(q("pgContent")) q("pgContent").style.display=S.page?"":"none";
+  if(q("pgTitle")) q("pgTitle").textContent="LED : "+(S.page||"");
+  q("pgVoyant")?.classList.toggle("on",S.page==="allumée");
+  q("pgRing")?.classList.toggle("invite",!!S.page&&!S.busy);
+  if(q("pgErr")){ q("pgErr").textContent=S.pageErr?"Page":""; q("pgErr2").textContent=S.pageErr?"inaccessible":""; }
+
+  const pill=(id,l,v,c)=>{ const p=$(id); p.className="pill "+(c||""); p.innerHTML=l+" : <b>"+v+"</b>"; };
+  pill("stBoard","Carte",!S.booted?"éteinte":(!S.connected?"hors ligne":(S.server?"serveur prêt":"connectée")),!S.booted?"":(S.connected?"ok":"bad"));
+  pill("stWifi","Wi-Fi",S.wifi?"actif":"coupé",S.wifi?"ok":"bad");
+  pill("stPhone","Téléphone",S.g4?"4G (hors réseau local)":"Wi-Fi local",S.g4?"bad":"ok");
+  pill("stLed","LED",S.pin?"allumée":"éteinte",S.pin?"ok":"");
+
+  setVar("vIp",S.connected?IP:"—");
+  setVar("vEtat",String(S.etat));
+  setVar("vPin",S.pin?"3,3 V (HIGH)":"0 V (LOW)");
+  setVar("vPage",S.pageErr?"page inaccessible":(S.page?"LED : "+S.page:"aucune"));
+
+  $("bootBtn").disabled=S.busy||S.booted;
+  $("bootBtn").textContent=S.booted?"Carte démarrée":"1. Démarrer la carte";
+  $("pageBtn").disabled=S.busy;
+  $("pageBtn").textContent=S.page?"2. Recharger la page":"2. Ouvrir la page";
+  $("wifiBtn").disabled=S.busy;
+  $("wifiBtn").setAttribute("aria-pressed",String(S.wifi));
+  $("wifiBtn").textContent=S.wifi?"3. Couper le Wi-Fi":"3. Rétablir le Wi-Fi";
+  $("g4").disabled=S.busy; $("g4").checked=S.g4;
+}
+const last={};
+function setVar(id,v){ const b=$(id),c=b.querySelector("code"); if(last[id]!==undefined&&last[id]!==v){ b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash"); } last[id]=v; c.textContent=v; }
+function active(id){ svg.querySelectorAll(".node").forEach(n=>n.classList.toggle("active",n.id==="n-"+id)); }
+function apPulse(on){ svg.querySelector("#apIcon")?.classList.toggle("pulse",on&&S.wifi); }
+
+/* ---------- timing ---------- */
+let nextResolve=null;
+const speed=()=>parseFloat($("speed").value)||1;
+class Abort extends Error{}
+function check(tok){ if(tok!==S.token) throw new Abort(); }
+function wait(ms,tok){
+  return new Promise(res=>{
+    if($("stepMode").checked){ nextResolve=res; $("nextBtn").disabled=false; $("nextBtn").focus({preventScroll:true}); }
+    else setTimeout(res,ms/speed());
+  }).then(()=>check(tok));
+}
+function scenario(n){ $("scenario").textContent="Scénario : "+n; $("steps").innerHTML=""; }
+function say(text,o){
+  o=o||{};
+  const ol=$("steps"); ol.querySelectorAll("li.current").forEach(li=>li.classList.remove("current"));
+  const li=document.createElement("li"); li.innerHTML=text; li.className="current"+(o.alert?" alert":""); ol.appendChild(li);
+  hl(o.code); if(o.node!==undefined) active(o.node);
+}
+function movePacket(from,to,label,kind,tok,failFrac){
+  const lane=kind==="sys"?"cmd":kind;
+  const a=G.off(G.c[from],lane),b=G.off(G.c[to],lane);
+  const g=el("g",{class:"pk-"+kind},layers.pk);
+  const w=label.length*7+16;
+  let px,py;
+  if(!G.vertical){ px=-w/2; py=(kind==="ret")?14:-34; } else { px=(kind==="ret")?14:-w-14; py=-10; }
+  if(G.vertical && px<-a.x+4) px=-a.x+4;
+  el("rect",{x:px,y:py,width:w,height:20,rx:10,class:"pk-pill"},g);
+  txt(g,px+w/2,py+14,label,"pk-t");
+  el("circle",{r:7.5,class:"pk-dot-"+kind},g);
+  const dist=Math.hypot(b.x-a.x,b.y-a.y), end=failFrac==null?1:failFrac;
+  const dur=reduced?1:(dist*end)/(0.28*speed());
+  return new Promise(res=>{
+    const t0=performance.now();
+    function step(now){
+      if(tok!==S.token){ g.remove(); return res(); }
+      const k=Math.min(1,(now-t0)/dur)*end;
+      const e=failFrac==null?(k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2):k;
+      g.setAttribute("transform",`translate(${a.x+(b.x-a.x)*e},${a.y+(b.y-a.y)*e})`);
+      if(k<end) requestAnimationFrame(step);
+      else if(failFrac!=null){ txt(g,0,9,"✕","cut"); setTimeout(()=>{ g.remove(); res(); },reduced?600:900/speed()); }
+      else setTimeout(()=>{ g.remove(); res(); },reduced?350:120);
+    }
+    requestAnimationFrame(step);
+  }).then(()=>check(tok));
+}
+async function run(fn){
+  if(S.busy) return;
+  S.busy=true; render(); const tok=S.token;
+  try{ await fn(tok); } catch(e){ if(!(e instanceof Abort)) console.error(e); }
+  finally{ if(tok===S.token){ S.busy=false; active(null); apPulse(false); $("nextBtn").disabled=true; render(); } }
+}
+
+/* ---------- scenarios ---------- */
+async function connectAndServe(tok){
+  say("<code>WiFi.begin(ssid, password)</code> : l'ESP32 envoie le <b>nom du réseau</b> et le <b>mot de passe</b> au point d'accès.",{code:["wbegin","id"],node:"esp"});
+  if(!S.wifi){
+    await movePacket(2,1,"SSID + mot de passe","sys",tok,0.55);
+    say("Aucun réseau Wi-Fi : la carte reste bloquée dans la boucle <code>while</code> et réessaie toutes les 500 ms. Le serveur web n'est pas encore démarré.",{code:["wwait"],alert:true,node:"esp"});
+    await wait(1600,tok); return false;
+  }
+  apPulse(true);
+  await movePacket(2,1,"SSID + mot de passe","sys",tok);
+  say("Le point d'accès accepte la carte et lui attribue une <b>adresse IP</b> sur le réseau local (service DHCP).",{node:"ap",code:["wwait"]});
+  await movePacket(1,2,"IP = "+IP,"sys",tok);
+  S.connected=true; render(); apPulse(false);
+  say(`<code>Serial.println(WiFi.localIP())</code> : le Serial Monitor affiche <b>${IP}</b>. C'est l'adresse à taper dans le navigateur.`,{code:["ip"],node:"esp"});
+  await wait(1800,tok);
+  if(!S.server){
+    say("<code>server.on(...)</code> associe chaque adresse à une fonction : <code>/</code> → <code>handleRoot()</code>, <code>/on</code> → <code>handleOn()</code>, <code>/off</code> → <code>handleOff()</code>. Puis <code>server.begin()</code> démarre le serveur web sur le port 80.",{code:["routes","sbegin"],node:"esp"});
+    await wait(2400,tok);
+    S.server=true; render();
+  }
+  say("<code>loop()</code> tourne en continu : <code>server.handleClient()</code> attend les requêtes des navigateurs.",{code:["handle"],node:"esp"});
+  await wait(1500,tok);
+  return true;
+}
+
+function boot(){
+  run(async tok=>{
+    scenario("démarrage de la carte");
+    S.booted=true; render();
+    say("La carte est alimentée par le câble USB : <code>setup()</code> s'exécute. La broche 26 devient une sortie et la LED est éteinte.",{code:["setup"],node:"esp"});
+    await wait(2000,tok);
+    const ok=await connectAndServe(tok);
+    if(ok) say("À vous : cliquez sur « 2. Ouvrir la page » pour taper l'adresse de la carte dans le navigateur.",{node:"phone",code:["handle"]});
+  });
+}
+
+async function request(path,tok){
+  // returns true if the request reached the server
+  S.lastPath=path==="/"?"":path;
+  if(S.g4){
+    await movePacket(0,1,"GET "+path,"cmd",tok,0.5);
+    say(`Le téléphone est en <b>4G</b> : il est sur Internet, pas sur le réseau local. L'adresse <b>${IP}</b> est une adresse <b>privée</b>, joignable seulement depuis le même Wi-Fi. La requête n'arrive jamais.`,{alert:true,node:"phone"});
+    return false;
+  }
+  if(!S.wifi){
+    await movePacket(0,1,"GET "+path,"cmd",tok,0.5);
+    say("Le point d'accès Wi-Fi est coupé : la requête ne peut pas atteindre la carte.",{alert:true,node:"ap"});
+    return false;
+  }
+  apPulse(true);
+  if(!S.server){
+    await movePacket(0,2,"GET "+path,"cmd",tok,0.72);
+    apPulse(false);
+    say(!S.booted?"Aucun appareil ne répond à cette adresse : la carte est éteinte.":"La carte n'a pas encore démarré son serveur web : personne ne répond.",{alert:true,node:"esp"});
+    return false;
+  }
+  await movePacket(0,2,"GET "+path,"cmd",tok);
+  apPulse(false);
+  return true;
+}
+async function fail(tok){
+  await wait(1400,tok);
+  S.pageErr=true; S.page=null; render();
+  say("Après un délai d'attente, le navigateur affiche <b>« Page inaccessible »</b>. Aucune commande n'est mémorisée : il n'y a pas d'intermédiaire pour la garder.",{alert:true,node:"phone"});
+  await wait(1800,tok);
+}
+
+function openPage(){
+  run(async tok=>{
+    scenario(S.page?"recharger la page":"ouvrir la page");
+    say(`Vous tapez <b>http://${IP}</b> dans le navigateur : il envoie une <b>requête HTTP GET /</b> à la carte, en Wi-Fi, via le point d'accès.`,{node:"phone",code:[]});
+    await wait(1300,tok);
+    if(!(await request("/",tok))) return fail(tok);
+    say("<code>server.handleClient()</code> reçoit la requête <code>GET /</code> et appelle <code>handleRoot()</code>, qui construit la page avec <code>page()</code>.",{code:["handle","root","page"],node:"esp"});
+    await wait(1800,tok);
+    say(`La carte répond <b>200 OK</b> avec la page HTML : elle contient l'état actuel de la LED (<b>${S.etat?"allumée":"éteinte"}</b>).`,{node:"esp",code:["root"]});
+    apPulse(true);
+    await movePacket(2,0,"200 OK · page HTML","ret",tok);
+    apPulse(false);
+    S.page=S.etat?"allumée":"éteinte"; S.pageErr=false; render();
+    say("Le navigateur affiche la page avec le voyant de la LED. Le voyant est un lien. À vous : <b>cliquez sur le voyant du téléphone</b> pour allumer la LED.",{node:"phone",code:[]});
+    await wait(1200,tok);
+  });
+}
+
+function toggleLed(){
+  const v=nextV(), path=v?"/on":"/off";
+  run(async tok=>{
+    scenario(v?"allumer la LED":"éteindre la LED");
+    say(`Vous appuyez sur le voyant ${v?"éteint":"allumé"} : c'est un lien vers l'adresse <b>http://${IP}${path}</b>. Le navigateur envoie la requête <b>GET ${path}</b>.`,{node:"phone",code:[]});
+    await wait(1400,tok);
+    if(!(await request(path,tok))) return fail(tok);
+    say(`<code>server.handleClient()</code> reçoit <code>GET ${path}</code> et appelle <code>${v?"handleOn()":"handleOff()"}</code>.`,{code:["handle",v?"on":"off"],node:"esp"});
+    await wait(1600,tok);
+    if(v) say("<code>digitalWrite(LED_PIN, HIGH)</code> : la broche GPIO 26 passe à 3,3 V, le courant traverse la résistance de 220 Ω et <b>la LED s'allume</b>.",{code:["high"],node:"led"});
+    else say("<code>digitalWrite(LED_PIN, LOW)</code> : la broche GPIO 26 passe à 0 V, le courant s'arrête et <b>la LED s'éteint</b>.",{code:["low"],node:"led"});
+    S.pin=v; render();
+    await wait(2000,tok);
+    say(`<code>etat_led = digitalRead(LED_PIN)</code> : la carte lit l'état réel de la broche (<b>${v}</b>).`,{code:[v?"readOn":"readOff"],node:"esp"});
+    S.etat=v; render();
+    await wait(1400,tok);
+    say(`<code>server.send(200, ..., page())</code> : la carte répond avec une nouvelle page qui indique <b>LED : ${v?"allumée":"éteinte"}</b>, avec le voyant ${v?"rouge":"gris"}. C'est le <b>retour d'état</b>.`,{code:[v?"sendOn":"sendOff","page"],node:"esp"});
+    apPulse(true);
+    await movePacket(2,0,`200 OK · LED : ${v?"allumée":"éteinte"}`,"ret",tok);
+    apPulse(false);
+    S.page=v?"allumée":"éteinte"; S.pageErr=false; render();
+    say("Le navigateur affiche la nouvelle page. Attention : elle ne se met à jour que lorsqu'elle reçoit une réponse. Si quelqu'un d'autre change la LED, il faut <b>recharger la page</b> pour le voir.",{node:"phone",code:[]});
+    await wait(1600,tok);
+  });
+}
+
+function toggleWifi(){
+  const on=!S.wifi;
+  run(async tok=>{
+    scenario(on?"retour du Wi-Fi":"coupure du Wi-Fi");
+    S.wifi=on; render();
+    if(!on){
+      say("Le point d'accès Wi-Fi est coupé : ni le téléphone ni la carte ne sont plus sur le réseau local.",{node:"ap",alert:true});
+      await wait(1500,tok);
+      if(S.connected){
+        S.connected=false; render();
+        say("La carte perd sa connexion Wi-Fi : son serveur web n'est plus joignable. Essayez d'appuyer sur le voyant de la page.",{node:"esp",alert:true});
+        await wait(1500,tok);
+      }
+      return;
+    }
+    say("Le point d'accès Wi-Fi est de nouveau disponible.",{node:"ap"});
+    await wait(1200,tok);
+    if(S.booted){
+      if(S.server){
+        say("La bibliothèque WiFi de l'ESP32 se reconnecte automatiquement au réseau.",{node:"esp"});
+        await wait(1000,tok);
+      }
+      const ok=await connectAndServe(tok);
+      if(ok) say(`La carte obtient en général la même adresse IP (${IP}). Rechargez la page pour vérifier l'état de la LED.`,{node:"phone",code:["handle"]});
+    }
+  });
+}
+
+function toggle4G(){
+  const on=$("g4").checked;
+  run(async tok=>{
+    scenario(on?"téléphone en 4G":"téléphone en Wi-Fi local");
+    S.g4=on; render();
+    say(on?"Le téléphone quitte le Wi-Fi et passe en 4G : il accède à Internet par le réseau de l'opérateur, en dehors du réseau local de la carte. Essayez d'ouvrir ou de recharger la page."
+          :"Le téléphone se reconnecte au Wi-Fi local : il est de nouveau sur le même réseau que la carte.",{node:"phone",alert:on});
+    await wait(1500,tok);
+  });
+}
+
+function reset(){
+  S.token++; S.busy=false;
+  if(nextResolve){ const r=nextResolve; nextResolve=null; r(); }
+  if(layers.pk) layers.pk.innerHTML="";
+  Object.assign(S,{booted:false,wifi:true,connected:false,server:false,g4:false,page:null,pageErr:false,pin:false,etat:false,lastPath:""});
+  $("scenario").textContent="Prêt";
+  $("steps").innerHTML='<li class="current">Cliquez sur « 1. Démarrer la carte » : l\'ESP32 va se connecter au Wi-Fi et démarrer son serveur web.</li>';
+  hl([]); active(null); apPulse(false); $("nextBtn").disabled=true; render();
+}
+
+$("bootBtn").addEventListener("click",boot);
+$("pageBtn").addEventListener("click",openPage);
+$("wifiBtn").addEventListener("click",toggleWifi);
+$("g4").addEventListener("change",toggle4G);
+$("resetBtn").addEventListener("click",reset);
+$("nextBtn").addEventListener("click",()=>{ if(nextResolve){ const r=nextResolve; nextResolve=null; $("nextBtn").disabled=true; r(); } });
+$("stepMode").addEventListener("change",e=>{
+  $("hint").innerHTML=e.target.checked?"Cliquez sur <b>Étape suivante</b> pour avancer.":"Cochez <b>Pas à pas</b> pour avancer à votre rythme.";
+  if(!e.target.checked&&nextResolve){ const r=nextResolve; nextResolve=null; $("nextBtn").disabled=true; r(); }
+});
+let rt; new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!S.busy) build(); },120); }).observe(svg.parentElement);
+build(); hl([]);
+})();
+</script>
+</body>
+</html>

@@ -89,8 +89,111 @@ a.dl:hover{background:var(--copper);color:var(--surface)}
   </header>
 
   <nav class="toc" aria-label="Thèmes">
+    <a href="#t02">02 · Synthèse maintenance</a>
+    <a href="#t03">03 · TP Intro ESP32</a>
+    <a href="#t04">04 · TP serveur web LED</a>
+    <a href="#t04_1">04.1 · TP Arduino Cloud LED</a>
+    <a href="#t05">05 · TP serveur web DHT11</a>
+    <a href="#t05_1">05.1 · TP Cloud DHT11</a>
+    <a href="#t06">06 · TP capteur HC-SR04</a>
+    <a href="#t07">07 · TP servomoteur SG90</a>
+    <a href="#t08">08 · Activité maintenance</a>
     <a href="#t09">09 · Générateur de tableau de bord</a>
   </nav>
+
+  <section class="theme" id="t02">
+    <div class="th-head"><span class="num">02</span><h2>Fiche de synthèse : IoT et maintenance préventive</h2></div>
+    <p class="desc">Types de maintenance, grandeurs à surveiller, architecture d&#x27;une solution IoT, indicateurs (MTBF, MTTR, disponibilité).</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="02_Fiche_synthese_Maintenance_IoT/IoT_Maintenance_Preventive_Synthese.docx">IoT_Maintenance_Preventive_Synthese.docx</a><span class="what">La fiche de synthèse</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t03">
+    <div class="th-head"><span class="num">03</span><h2>TP : introduction à l&#x27;ESP32</h2></div>
+    <p class="desc">Découverte de la carte DOIT ESP32 DEVKIT V1, installation dans l&#x27;Arduino IDE, premier téléversement et bases du langage. À faire avant les autres TP.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="03_TP_Intro_ESP32/TP_Intro_ESP32.docx">TP_Intro_ESP32.docx</a><span class="what">La fiche du TP</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t04">
+    <div class="th-head"><span class="num">04</span><h2>TP : piloter une LED avec un serveur web (ESP32)</h2></div>
+    <p class="desc">Vous câblez la LED, écrivez et testez votre propre programme dans l&#x27;Arduino IDE, découvrez le tableau de bord du TP dans le générateur, puis téléversez le programme du serveur web : un appui sur le voyant de la page allume ou éteint la LED.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="04_TP_Serveur_Web_LED/TP_ESP32_Serveur_Web_LED.docx">TP_ESP32_Serveur_Web_LED.docx</a><span class="what">Câblage, téléversement, tests et questions</span></span></li>
+      <li><span class="tag anim">animation</span><span><a href="04_TP_Serveur_Web_LED/Animation_LED_Serveur_Web.html">Animation_LED_Serveur_Web.html</a><span class="what">Requêtes HTTP entre le navigateur et la carte, Wi-Fi coupé, téléphone en 4G</span></span></li>
+      <li><span class="tag prog">programme</span><span><a href="04_TP_Serveur_Web_LED/ESP32_Serveur_Web_LED/ESP32_Serveur_Web_LED.ino">ESP32_Serveur_Web_LED.ino</a><span class="what">Le programme Arduino : saisir le Wi-Fi avant de téléverser</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="04_TP_Serveur_Web_LED/schema_cablage_ESP32_LED.png">schema_cablage_ESP32_LED.png</a><span class="what">Câblage de la LED sur la plaque d&#x27;essai</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="04_TP_Serveur_Web_LED/schema_electrique_ESP32_LED.png">schema_electrique_ESP32_LED.png</a><span class="what">Schéma électrique : D26, résistance 220 Ω, LED, GND</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t04_1">
+    <div class="th-head"><span class="num">04.1</span><h2>TP : piloter une LED à distance avec Arduino Cloud</h2></div>
+    <p class="desc">La LED est commandée depuis un tableau de bord Arduino Cloud, avec un retour de son état réel.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="04_1_TP_Arduino_Cloud_LED/TP_Arduino_Cloud_LED.docx">TP_Arduino_Cloud_LED.docx</a><span class="what">Câblage, configuration d&#x27;Arduino Cloud, programme à compléter, tableau de bord et questions</span></span></li>
+      <li><span class="tag anim">animation</span><span><a href="04_1_TP_Arduino_Cloud_LED/Animation_LED_Arduino_Cloud.html">Animation_LED_Arduino_Cloud.html</a><span class="what">Connexion au Wi-Fi et au cloud, commande et retour d&#x27;état, Wi-Fi coupé</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="04_1_TP_Arduino_Cloud_LED/schema_cablage_ESP32_LED.png">schema_cablage_ESP32_LED.png</a><span class="what">Câblage de la LED sur la plaque d&#x27;essai</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="04_1_TP_Arduino_Cloud_LED/schema_electrique_ESP32_LED.png">schema_electrique_ESP32_LED.png</a><span class="what">Schéma électrique</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t05">
+    <div class="th-head"><span class="num">05</span><h2>TP : afficher la température et l&#x27;humidité avec un serveur web (DHT11)</h2></div>
+    <p class="desc">Vous écrivez votre programme de mesure dans l&#x27;Arduino IDE, puis créez le serveur web avec le générateur : jauges, courbes des 30 dernières minutes et historique téléchargeable en CSV.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="05_TP_Serveur_Web_DHT11/TP_ESP32_Serveur_Web_DHT11.docx">TP_ESP32_Serveur_Web_DHT11.docx</a><span class="what">Fiche technique du capteur, câblage, bibliothèque, tests, fichier CSV et questions</span></span></li>
+      <li><span class="tag anim">animation</span><span><a href="05_TP_Serveur_Web_DHT11/Animation_DHT11_Serveur_Web.html">Animation_DHT11_Serveur_Web.html</a><span class="what">Requêtes HTTP, jauges, courbes, fichier CSV, rechargement automatique, pannes</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="05_TP_Serveur_Web_DHT11/schema_cablage_ESP32_DHT11.png">schema_cablage_ESP32_DHT11.png</a><span class="what">Câblage du module DHT11 (D4, 3V3, GND)</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="05_TP_Serveur_Web_DHT11/schema_electrique_ESP32_DHT11.png">schema_electrique_ESP32_DHT11.png</a><span class="what">Schéma électrique</span></span></li>
+      <li><span class="tag prog">programme</span><span><a href="05_TP_Serveur_Web_DHT11/ESP32_Serveur_Web_DHT11/ESP32_Serveur_Web_DHT11.ino">ESP32_Serveur_Web_DHT11.ino</a><span class="what">Le programme d&#x27;origine, pour la partie « Pour aller plus loin » : saisir le Wi-Fi, installer DHT sensor library</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t05_1">
+    <div class="th-head"><span class="num">05.1</span><h2>TP : mesurer la température et l&#x27;humidité avec Arduino Cloud (DHT11)</h2></div>
+    <p class="desc">Le module DHT11 envoie la température et l&#x27;humidité vers Arduino Cloud : affichage en temps réel et historique.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="05_1_TP_Arduino_Cloud_DHT11/TP_Arduino_Cloud_DHT11.docx">TP_Arduino_Cloud_DHT11.docx</a><span class="what">Fiche technique du capteur, câblage, Arduino Cloud, programme à compléter et questions</span></span></li>
+      <li><span class="tag anim">animation</span><span><a href="05_1_TP_Arduino_Cloud_DHT11/Animation_DHT11_Arduino_Cloud.html">Animation_DHT11_Arduino_Cloud.html</a><span class="what">Mesures, envoi vers le cloud, souffle sur le capteur, Wi-Fi coupé, fil débranché</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="05_1_TP_Arduino_Cloud_DHT11/schema_cablage_ESP32_DHT11.png">schema_cablage_ESP32_DHT11.png</a><span class="what">Câblage du module DHT11 (D4, 3V3, GND)</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="05_1_TP_Arduino_Cloud_DHT11/schema_electrique_ESP32_DHT11.png">schema_electrique_ESP32_DHT11.png</a><span class="what">Schéma électrique</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t06">
+    <div class="th-head"><span class="num">06</span><h2>TP : mesurer une distance avec le capteur ultrason HC-SR04</h2></div>
+    <p class="desc">Mesurer une distance avec le capteur HC-SR04 : votre programme de mesure dans l&#x27;Arduino IDE, un espace de travail de robot à trois LED, puis le serveur web créé avec le générateur de tableau de bord, et l&#x27;étude de l&#x27;erreur de mesure.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/TP_ESP32_Serveur_Web_HCSR04.docx">TP_ESP32_Serveur_Web_HCSR04.docx</a><span class="what">La fiche du TP</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/schema_cablage_ESP32_HCSR04.png">schema_cablage_ESP32_HCSR04.png</a><span class="what">Câblage du capteur</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/schema_cablage_ESP32_HCSR04_LED.png">schema_cablage_ESP32_HCSR04_LED.png</a><span class="what">Câblage avec les trois LED</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="06_TP_Serveur_Web_capteur%20HCSR04/schema_electrique_ESP32_HCSR04.png">schema_electrique_ESP32_HCSR04.png</a><span class="what">Schéma électrique</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t07">
+    <div class="th-head"><span class="num">07</span><h2>TP : piloter un servomoteur SG90</h2></div>
+    <p class="desc">Piloter un servomoteur SG90 avec un potentiomètre : vos programmes dans l&#x27;Arduino IDE, puis le serveur web créé avec le générateur de tableau de bord, où le servomoteur suit la molette ou se commande depuis la page.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="07_TP_Serveur_Web_servomoteur%20SG90/TP_ESP32_Serveur_Web_Servo_SG90.docx">TP_ESP32_Serveur_Web_Servo_SG90.docx</a><span class="what">La fiche du TP</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="07_TP_Serveur_Web_servomoteur%20SG90/schema_cablage_ESP32_potentiometre_SG90.png">schema_cablage_ESP32_potentiometre_SG90.png</a><span class="what">Câblage</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="07_TP_Serveur_Web_servomoteur%20SG90/schema_electrique_ESP32_potentiometre_SG90.png">schema_electrique_ESP32_potentiometre_SG90.png</a><span class="what">Schéma électrique</span></span></li>
+    </ul>
+  </section>
+
+  <section class="theme" id="t08">
+    <div class="th-head"><span class="num">08</span><h2>Activité : maintenance préventive d&#x27;une machine connectée</h2></div>
+    <p class="desc">Un bras motorisé surveillé par un potentiomètre, un capteur ultrason et un DHT11 : compteur de cycles, seuils d&#x27;alerte et d&#x27;alarme, arrêt automatique et page web.</p>
+    <ul class="files">
+      <li><span class="tag fiche">fiche</span><span><a href="08_Activite_Maintenance_Machine/Activite_Maintenance_Machine_ESP32.docx">Activite_Maintenance_Machine_ESP32.docx</a><span class="what">Câblage, programme, scénarios de test et questions</span></span></li>
+      <li><span class="tag anim">animation</span><span><a href="08_Activite_Maintenance_Machine/Animation_Maintenance_Machine.html">Animation_Maintenance_Machine.html</a><span class="what">Simulation de la machine : cycles, effort, niveau de lubrifiant, armoire électrique</span></span></li>
+      <li><span class="tag prog">programme</span><span><a href="08_Activite_Maintenance_Machine/ESP32_Maintenance_Machine/ESP32_Maintenance_Machine.ino">ESP32_Maintenance_Machine.ino</a><span class="what">Le programme Arduino : saisir le Wi-Fi, installer ESP32Servo et DHT sensor library</span></span></li>
+      <li><span class="tag img">schéma</span><span><a href="08_Activite_Maintenance_Machine/schema_cablage_maintenance_machine.png">schema_cablage_maintenance_machine.png</a><span class="what">Câblage complet de la machine pédagogique</span></span></li>
+    </ul>
+  </section>
 
   <section class="theme" id="t09">
     <div class="th-head"><span class="num">09</span><h2>Application : générateur de tableau de bord pour l&#x27;ESP32</h2></div>
