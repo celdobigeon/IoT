@@ -26,7 +26,12 @@
 .cta a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .cta a:hover{border-color:var(--muted)}
 .cta a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.card .num{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--accent);font-weight:500}
+.grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{flex-direction:row;align-items:center;gap:12px;padding:12px 14px}
+.card .num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent);font-weight:500;flex:none;min-width:2.2em}
+.card h3{font-size:15.5px;line-height:1.3;flex:1}
+.card .go{margin:0;padding:0;flex:none}
+section{padding-top:22px}
 </style>
 </head>
 <body>
@@ -93,9 +98,7 @@
       <a class="card" href="02_Fiche_synthese_Maintenance_IoT/index.html">
         <span class="num">02</span>
         <h3>Fiche de synthèse : IoT et maintenance préventive</h3>
-        <p>Types de maintenance, grandeurs à surveiller, architecture d&#x27;une solution IoT, indicateurs (MTBF, MTTR, disponibilité).</p>
-        <div class="tags"><span>Maintenance</span><span>Industrie 4.0</span><span>MTBF / MTTR</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
     </div>
   </section>
@@ -105,37 +108,27 @@
       <a class="card" href="03_TP_Intro_ESP32/index.html">
         <span class="num">03</span>
         <h3>TP : introduction à l&#x27;ESP32</h3>
-        <p>Découverte de la carte DOIT ESP32 DEVKIT V1, installation dans l&#x27;Arduino IDE, premier téléversement et bases du langage. À faire avant les autres TP.</p>
-        <div class="tags"><span>ESP32</span><span>Arduino IDE</span><span>Bases du langage</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
       <a class="card" href="04_TP_Serveur_Web_LED/index.html">
         <span class="num">04</span>
         <h3>TP : piloter une LED avec un serveur web (ESP32)</h3>
-        <p>Vous câblez la LED, écrivez et testez votre propre programme dans l&#x27;Arduino IDE, découvrez le tableau de bord du TP dans le générateur, puis téléversez le programme du serveur web : un appui sur le voyant de la page allume ou éteint la LED.</p>
-        <div class="tags"><span>ESP32</span><span>LED</span><span>Serveur web</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
       <a class="card" href="05_TP_Serveur_Web_DHT11/index.html">
         <span class="num">05</span>
         <h3>TP : afficher la température et l&#x27;humidité avec un serveur web (DHT11)</h3>
-        <p>Vous écrivez votre programme de mesure dans l&#x27;Arduino IDE, puis créez le serveur web avec le générateur : jauges, courbes des 30 dernières minutes et historique téléchargeable en CSV.</p>
-        <div class="tags"><span>DHT11</span><span>Serveur web</span><span>Fichier CSV</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
       <a class="card" href="06_TP_Serveur_Web_capteur%20HCSR04/index.html">
         <span class="num">06</span>
         <h3>TP : mesurer une distance avec le capteur ultrason HC-SR04</h3>
-        <p>Mesurer une distance avec le capteur HC-SR04 : votre programme de mesure dans l&#x27;Arduino IDE, un espace de travail de robot à trois LED, puis le serveur web créé avec le générateur de tableau de bord, et l&#x27;étude de l&#x27;erreur de mesure.</p>
-        <div class="tags"><span>HC-SR04</span><span>Ultrasons</span><span>Serveur web</span><span>Tableur</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
       <a class="card" href="07_TP_Serveur_Web_servomoteur%20SG90/index.html">
         <span class="num">07</span>
         <h3>TP : piloter un servomoteur SG90</h3>
-        <p>Piloter un servomoteur SG90 avec un potentiomètre : vos programmes dans l&#x27;Arduino IDE, puis le serveur web créé avec le générateur de tableau de bord, où le servomoteur suit la molette ou se commande depuis la page.</p>
-        <div class="tags"><span>SG90</span><span>Potentiomètre</span><span>PWM</span><span>Serveur web</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
     </div>
   </section>
@@ -145,9 +138,7 @@
       <a class="card" href="08_Activite_Maintenance_Machine/index.html">
         <span class="num">08</span>
         <h3>Activité : maintenance préventive d&#x27;une machine connectée</h3>
-        <p>Un bras motorisé surveillé par un potentiomètre, un capteur ultrason et un DHT11 : compteur de cycles, seuils d&#x27;alerte et d&#x27;alarme, arrêt automatique et page web.</p>
-        <div class="tags"><span>Maintenance</span><span>SG90</span><span>HC-SR04</span><span>DHT11</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
     </div>
   </section>
@@ -157,9 +148,7 @@
       <a class="card" href="09_Application_Generateur_Page_Web/index.html">
         <span class="num">09</span>
         <h3>Application : générateur de tableau de bord pour l&#x27;ESP32</h3>
-        <p>Composez la page web servie par la carte (jauges, courbes, voyant…), testez-la en simulation et téléchargez le programme Arduino, sans rien programmer.</p>
-        <div class="tags"><span>Tableau de bord</span><span>Sans programmer</span></div>
-        <span class="go">Ouvrir <em>→</em></span>
+        <span class="go"><em>→</em></span>
       </a>
     </div>
   </section>
