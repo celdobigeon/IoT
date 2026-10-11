@@ -24,11 +24,11 @@
   <div class="meta"><span class="tag">DHT11</span><span class="tag">Serveur web</span><span class="tag">Fichier CSV</span></div>
 </header>
 <nav class="serie" aria-label="Les TP"><a href="../03_TP_Intro_ESP32/index.html"><b>TP 03</b>TP Intro ESP32</a><a href="../04_TP_Serveur_Web_LED/index.html"><b>TP 04</b>TP serveur web LED</a><span class="ici"><b>TP 05</b>TP serveur web DHT11</span><a href="../06_TP_Serveur_Web_capteur%20HCSR04/index.html"><b>TP 06</b>TP capteur HC-SR04</a><a href="../07_TP_Serveur_Web_servomoteur%20SG90/index.html"><b>TP 07</b>TP servomoteur SG90</a><a href="../08_Activite_Maintenance_Machine/index.html"><b>TP 08</b>Activité maintenance</a></nav>
-<section class="ress"><h2>Ressources</h2><div class="liens"><a href="Animation_DHT11_Serveur_Web.html"><span class="fl">↗</span><span><b>Ouvrir l'animation</b> · Animation_DHT11_Serveur_Web.html<span class="d">Requêtes HTTP, jauges, courbes, fichier CSV, rechargement automatique, pannes</span></span></a><a href="ESP32_Serveur_Web_DHT11/ESP32_Serveur_Web_DHT11.ino" download="ESP32_Serveur_Web_DHT11.ino"><span class="fl">↓</span><span><b>Télécharger ESP32_Serveur_Web_DHT11.ino</b><span class="d">Le programme d&#x27;origine, pour la partie « Pour aller plus loin » : saisir le Wi-Fi, installer DHT sensor library</span></span></a></div></section>
+<section class="ress"><h2>Ressources</h2><div class="liens"><a href="Animation_DHT11_Serveur_Web.html"><span class="fl">↗</span><span><b>Ouvrir l'animation</b> · Animation_DHT11_Serveur_Web.html<span class="d">Requêtes HTTP, jauges, courbes, fichier CSV, rechargement automatique, pannes</span></span></a></div></section>
 
 <section><h2>1. Objectifs</h2>
 <ul><li>Réaliser le câblage d&#x27;un module capteur DHT11 sur une plaque d&#x27;essai et le relier à la carte ESP32.</li><li>Écrire et tester votre propre programme de mesure dans l&#x27;Arduino IDE.</li><li>Créer le serveur web avec le générateur de tableau de bord : la carte mesure l&#x27;air et affiche jauges et courbes sur le réseau Wi-Fi local.</li><li>Lire la température et l&#x27;humidité dans le navigateur d&#x27;un téléphone ou d&#x27;un ordinateur, sous forme de jauges et de courbes.</li><li>Récupérer l&#x27;historique des mesures dans un fichier CSV et l&#x27;exploiter avec un tableur.</li><li>Comprendre qui demande l&#x27;information et qui la fournit, grâce à l&#x27;animation fournie.</li><li>Comparer cette solution avec la plateforme Arduino Cloud.</li></ul>
-<div class="note "><p class="nt">Ce qui vous est fourni</p><ul><li>Le générateur de tableau de bord (<a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a>, ou en ligne : <a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a>) : c&#x27;est avec lui que vous créerez le programme du serveur web.</li><li>Le programme d&#x27;origine : dossier ESP32_Serveur_Web_DHT11 (voir l&#x27;annexe). Il sert à la partie 10, « Pour aller plus loin ».</li><li>L&#x27;animation <a href="Animation_DHT11_Serveur_Web.html">Animation_DHT11_Serveur_Web.html</a> : ouvrez-la dans un navigateur (double-clic).</li></ul><p>Votre travail : le câblage, votre programme de mesure, la création du serveur web avec le générateur, les tests et les questions.</p></div>
+<div class="note "><p class="nt">Ce qui vous est fourni</p><ul><li>Le générateur de tableau de bord (<a href="../09_Application_Generateur_Page_Web/Generateur_Page_Web_ESP32_etudiant.html">Generateur_Page_Web_ESP32_etudiant.html</a>, ou en ligne : <a href="https://celdobigeon.github.io/IoT/">celdobigeon.github.io/IoT</a>) : c&#x27;est avec lui que vous créerez le programme du serveur web.</li><li>L&#x27;animation <a href="Animation_DHT11_Serveur_Web.html">Animation_DHT11_Serveur_Web.html</a> : ouvrez-la dans un navigateur (double-clic).</li></ul><p>Votre travail : le câblage, votre programme de mesure, la création du serveur web avec le générateur, les tests et les questions.</p></div>
 </section>
 <section><h2>2. Matériel</h2>
 <div class="tbl"><table><tr><th><p><b>Matériel</b></p></th><th><p><b>Remarque</b></p></th></tr><tr><td><p>1 carte DOIT ESP32 DEVKIT V1 + câble micro-USB</p></td><td><p>Le câble doit permettre le transfert de données (pas seulement la charge)</p></td></tr><tr><td><p>1 module DHT11 à 3 broches (S, +, –)</p></td><td><p>La résistance de tirage de 10 kΩ est déjà soudée sur le module. L&#x27;ordre des broches peut changer d&#x27;un fabricant à l&#x27;autre : lisez les marquages</p></td></tr><tr><td><p>1 plaque d&#x27;essai (breadboard)</p></td><td></td></tr><tr><td><p>3 fils mâle-femelle (1 jaune, 1 rouge, 1 noir) + 2 fils mâle-mâle (1 rouge, 1 noir)</p></td><td><p>Côté femelle : sur les broches de la carte ; côté mâle : dans la plaque d&#x27;essai</p></td></tr><tr><td><p>1 ordinateur avec l&#x27;Arduino IDE</p></td><td><p>Les cartes ESP32 sont déjà installées ; la bibliothèque du capteur est installée à la partie 6</p></td></tr><tr><td><p>1 smartphone (ou l&#x27;ordinateur) avec un navigateur web</p></td><td><p>Connecté au même réseau Wi-Fi que la carte</p></td></tr><tr><td><p>Un tableur (Excel ou LibreOffice Calc)</p></td><td><p>Pour ouvrir le fichier CSV des mesures</p></td></tr></table></div>
@@ -51,7 +51,7 @@
 <h3>Étapes</h3>
 <ol><li>Module DHT11 : grille bleue face à vous, enfoncez les broches S, +, – dans les trous a14, a15, a16.</li><li>Fil jaune : du côté femelle sur la broche D4 de la carte, du côté mâle dans le trou e14.</li><li>Fil rouge mâle-mâle : du trou e15 à la ligne rouge (+) du bas.</li><li>Fil noir mâle-mâle : du trou e16 à la ligne bleue (–) du bas.</li><li>Fil rouge mâle-femelle : de la broche 3V3 de la carte (en bas à droite) à la ligne rouge (+) du bas.</li><li>Fil noir mâle-femelle : de la broche GND de la carte (côté droit, juste au-dessus de 3V3) à la ligne bleue (–) du bas.</li></ol>
 <div class="tbl"><table><tr><th><p><b>Élément</b></p></th><th><p><b>De</b></p></th><th><p><b>Vers</b></p></th></tr><tr><td><p>Module DHT11</p></td><td><p>Broches S, +, – (grille bleue face à vous)</p></td><td><p>Trous a14, a15, a16</p></td></tr><tr><td><p>Fil jaune (mâle-femelle)</p></td><td><p>Broche D4 de la carte</p></td><td><p>Trou e14 (colonne de S)</p></td></tr><tr><td><p>Fil rouge (mâle-mâle)</p></td><td><p>Trou e15 (colonne de +)</p></td><td><p>Ligne rouge (+) du bas</p></td></tr><tr><td><p>Fil noir (mâle-mâle)</p></td><td><p>Trou e16 (colonne de –)</p></td><td><p>Ligne bleue (–) du bas</p></td></tr><tr><td><p>Fil rouge (mâle-femelle)</p></td><td><p>Broche 3V3 de la carte</p></td><td><p>Ligne rouge (+) du bas</p></td></tr><tr><td><p>Fil noir (mâle-femelle)</p></td><td><p>Broche GND de la carte (côté droit)</p></td><td><p>Ligne bleue (–) du bas</p></td></tr></table></div>
-<p>Dans le programme, la broche D4 correspond au numéro 4 (const int DHT_PIN = 4;).</p>
+<p>Dans votre programme, la broche D4 correspond au numéro 4 : DHT dht(4, DHT11);</p>
 <div class="note warn"><p class="nt">Attention</p><ul><li>Si le + et le – sont inversés, le capteur chauffe et peut être détruit en quelques secondes.</li><li>Si le capteur devient chaud au toucher : débranchez immédiatement le câble USB et appelez l&#x27;enseignant.</li></ul></div>
 <p><b>Faites vérifier votre câblage par l&#x27;enseignant avant de brancher la carte.</b></p>
 <ul class="check"><li>Câblage vérifié</li></ul>
@@ -79,211 +79,19 @@
 <p>Notez sur votre feuille le nombre de mesures, puis la température moyenne, minimale et maximale (°C).</p>
 </section>
 <section class="questions"><h2>9. Questions de compréhension</h2>
-<ol><li>Dans ce TP, qui joue le rôle de client et qui joue le rôle de serveur ? Quel est le rôle du DHT11 ?</li><li>Quand vous ouvrez la page, quelle fonction du programme est exécutée ? Fait-elle une nouvelle mesure ? D&#x27;où viennent les valeurs affichées ?</li><li>La page se recharge toute seule toutes les 5 secondes. Quelle ligne du programme le demande ? Qui prend l&#x27;initiative de ce rechargement : la carte ou le navigateur ?</li><li>Pourquoi le programme utilise-t-il millis() plutôt que delay(5000) dans loop() pour attendre entre deux mesures ? Que se passerait-il pour la page web avec delay(5000) ?</li><li>Vous soufflez sur le capteur : au bout de combien de temps la page change-t-elle ? Expliquez pourquoi ce délai varie d&#x27;une fois à l&#x27;autre.</li><li>Le fil jaune est débranché : que montrent le moniteur série et la page ? Donnez deux autres erreurs (de câblage ou de programme) qui peuvent produire le même message.</li><li>Deux téléphones ouvrent la page en même temps. Affichent-ils les mêmes valeurs ? Le capteur fait-il plus de mesures ? Pourquoi est-ce important pour un DHT11 ?</li><li>Ouvrez le fichier mesures.csv. Pourquoi la première colonne donne-t-elle le temps depuis le démarrage de la carte, et non l&#x27;heure ? Combien de lignes le fichier peut-il contenir au maximum, et que se passe-t-il ensuite ?</li><li>Maintenance : on veut surveiller la température d&#x27;une armoire électrique pendant tout un week-end et être prévenu en cas de surchauffe. Le serveur web de ce TP convient-il, ou faut-il Arduino Cloud ? Justifiez avec deux limites (pensez à la durée de l&#x27;historique, au redémarrage de la carte et au téléphone en 4G dans l&#x27;animation).</li></ol>
+<ol><li>Dans ce TP, qui joue le rôle de client et qui joue le rôle de serveur ? Quel est le rôle du DHT11 ?</li><li>Dans l&#x27;animation (panneau « Code exécuté sur l&#x27;ESP32 »), quand le navigateur ouvre la page, quelle fonction du programme est exécutée ? Fait-elle une nouvelle mesure ? D&#x27;où viennent les valeurs affichées ?</li><li>La page se recharge toute seule toutes les 5 secondes. Quelle ligne du programme le demande (voir l&#x27;animation) ? Qui prend l&#x27;initiative de ce rechargement : la carte ou le navigateur ?</li><li>Votre programme de la partie 6 attend 2 s avec delay(2000). Le serveur web, lui, utilise millis() pour attendre entre deux mesures (voir l&#x27;animation). Pourquoi ? Que se passerait-il pour la page web avec delay(5000) ?</li><li>Vous soufflez sur le capteur : au bout de combien de temps la page change-t-elle ? Expliquez pourquoi ce délai varie d&#x27;une fois à l&#x27;autre.</li><li>Le fil jaune est débranché : que montrent le moniteur série et la page ? Donnez deux autres erreurs (de câblage ou de programme) qui peuvent produire le même message.</li><li>Deux téléphones ouvrent la page en même temps. Affichent-ils les mêmes valeurs ? Le capteur fait-il plus de mesures ? Pourquoi est-ce important pour un DHT11 ?</li><li>Ouvrez le fichier mesures.csv. Pourquoi la première colonne donne-t-elle le temps depuis le démarrage de la carte, et non l&#x27;heure ? Combien de lignes le fichier peut-il contenir au maximum, et que se passe-t-il ensuite ?</li><li>Maintenance : on veut surveiller la température d&#x27;une armoire électrique pendant tout un week-end et être prévenu en cas de surchauffe. Le serveur web de ce TP convient-il, ou faut-il Arduino Cloud ? Justifiez avec deux limites (pensez à la durée de l&#x27;historique, au redémarrage de la carte et au téléphone en 4G dans l&#x27;animation).</li></ol>
 </section>
 <section><h2>10. Pour aller plus loin</h2>
-<p>Ces trois améliorations se font sur le programme d&#x27;origine (dossier <code>ESP32_Serveur_Web_DHT11</code>, voir l&#x27;annexe) : ouvrez-le dans l&#x27;Arduino IDE, renseignez le Wi-Fi, puis modifiez-le.</p>
+<p>Ces trois améliorations se font sur votre programme de mesure de la partie 6 (croquis Mesure_DHT11). Enregistrez-le d&#x27;abord sous un autre nom (Fichier &gt; Enregistrer sous…), puis modifiez la copie.</p>
 <h3>A. Alerte de surchauffe</h3>
-<ul><li>Dans la fonction page(), juste après les deux lignes des jauges (avant l&#x27;accolade } qui ferme le else), ajoutez :</li></ul>
-<pre><code>    if (temperature &gt; 28) {
-      html += &quot;&lt;p style=&#x27;color:#c00&#x27;&gt;&lt;b&gt;Alerte : température trop élevée !&lt;/b&gt;&lt;/p&gt;&quot;;
-    }</code></pre>
-<ul><li>Téléversez, puis tenez le capteur entre vos doigts jusqu&#x27;à l&#x27;affichage de l&#x27;alerte.</li></ul>
+<ul><li>Quand la température dépasse 28 °C, le moniteur série affiche en plus « Alerte : température trop élevée ! ».</li><li>Téléversez, puis tenez le capteur entre vos doigts jusqu&#x27;à l&#x27;affichage de l&#x27;alerte.</li></ul>
 <h3>B. Température ressentie</h3>
-<ul><li>Ajoutez une variable globale float ressenti = 0; et, dans mesurer(), juste après humidite = h;, la ligne : ressenti = dht.computeHeatIndex(t, h, false);</li><li>Affichez-la dans page(), sous les jauges, avec : html += &quot;&lt;p&gt;Température ressentie : &quot; + String(ressenti, 1) + &quot; °C&lt;/p&gt;&quot;;</li></ul>
-<h3>C. Une adresse pour les machines</h3>
-<ul><li>Ajoutez une deuxième adresse /mesures qui renvoie seulement les valeurs, au format JSON (lisible par un autre programme) :</li></ul>
-<pre><code>void handleMesures() {
-  String json = &quot;{\&quot;temperature\&quot;:&quot; + String(temperature, 1) + &quot;,\&quot;humidite\&quot;:&quot; + String(humidite, 0) + &quot;}&quot;;
-  server.send(200, &quot;application/json&quot;, json);
-}</code></pre>
-<ul><li>Dans setup(), sous server.on(&quot;/&quot;, handleRoot);, ajoutez : server.on(&quot;/mesures&quot;, handleMesures);</li><li>Testez l&#x27;adresse http://&lt;adresse IP&gt;/mesures dans le navigateur.</li></ul>
+<ul><li>Affichez aussi la température ressentie. La bibliothèque la calcule à partir de la température et de l&#x27;humidité : dht.computeHeatIndex(t, h, false) (false = résultat en degrés Celsius).</li><li>Soufflez sur le capteur : comment évolue l&#x27;écart entre la température et la température ressentie quand l&#x27;humidité augmente ?</li></ul>
+<h3>C. Mesurer sans bloquer la carte</h3>
+<ul><li>Remplacez delay(2000) par une attente avec millis() : la carte mesure toujours toutes les 2 s, mais loop() ne s&#x27;arrête plus. Aide : une variable unsigned long derniereMesure = 0; et le test if (millis() - derniereMesure &gt;= 2000).</li><li>Pour le vérifier, faites clignoter en même temps la LED bleue de la carte (broche 2) toutes les 200 ms, elle aussi avec millis() : elle doit clignoter régulièrement pendant les mesures.</li><li>Faites le lien avec la question 4 : c&#x27;est ce que fait le serveur web pour rester disponible.</li></ul>
 </section>
 <section><h2>11. En cas de problème</h2>
 <div class="tbl"><table><tr><th><p><b>Problème</b></p></th><th><p><b>Solution</b></p></th></tr><tr><td><p>La carte n&#x27;apparaît pas dans Outils &gt; Port</p></td><td><p>Vérifier le câble micro-USB (données), installer le pilote USB (CP210x), changer de port USB.</p></td></tr><tr><td><p>Erreur de compilation « DHT.h: No such file or directory »</p></td><td><p>La bibliothèque DHT sensor library n&#x27;est pas installée : refaire l&#x27;étape 2 de la partie 6.</p></td></tr><tr><td><p>Le téléversement bloque sur « Connecting… »</p></td><td><p>Maintenir le bouton BOOT enfoncé au début du téléversement.</p></td></tr><tr><td><p>Des points s&#x27;affichent sans fin dans le moniteur série</p></td><td><p>La carte ne trouve pas le réseau Wi-Fi : prévenir l&#x27;enseignant.</p></td></tr><tr><td><p>Rien ne s&#x27;affiche dans le moniteur série</p></td><td><p>Régler la vitesse sur 115200 bauds, puis appuyer sur EN.</p></td></tr><tr><td><p>« Erreur de lecture du DHT11 ! »</p></td><td><p>Vérifier les colonnes 14-15-16, le fil jaune sur D4, le fil 3V3, le fil GND et l&#x27;ordre des broches du module.</p></td></tr><tr><td><p>La page ne s&#x27;ouvre pas</p></td><td><p>Vérifier que le téléphone est sur le même Wi-Fi et que l&#x27;adresse commence par http:// (et non https://).</p></td></tr><tr><td><p>Le fichier CSV s&#x27;ouvre dans une seule colonne</p></td><td><p>Tableur réglé en anglais : utiliser Données &gt; Convertir (Excel) ou choisir le point-virgule comme séparateur à l&#x27;ouverture (LibreOffice).</p></td></tr><tr><td><p>Les courbes repartent de zéro</p></td><td><p>La carte a redémarré (coupure d&#x27;alimentation, bouton EN) : l&#x27;historique était dans sa mémoire et il est effacé.</p></td></tr><tr><td><p>La page ne se recharge plus</p></td><td><p>Le navigateur a affiché une page d&#x27;erreur (Wi-Fi coupé, carte redémarrée…) : recharger la page à la main.</p></td></tr><tr><td><p>Le capteur est chaud</p></td><td><p>Le + et le – sont inversés : débrancher immédiatement et vérifier le câblage.</p></td></tr></table></div>
-</section>
-<section><h2>Annexe – Programme d&#x27;origine (pour la partie 10)</h2>
-<p>Ce programme sert à la partie 10, « Pour aller plus loin ». Il ressemble à celui que crée le générateur : vous y retrouvez les mêmes lignes que dans l&#x27;animation.</p>
-<pre><code>// TP IoT - Afficher la température et l&#x27;humidité sur une page web hébergée par l&#x27;ESP32
-// Carte : DOIT ESP32 DEVKIT V1 - module DHT11 : S sur D4 (GPIO 4), + sur 3V3, - sur GND
-// Bibliothèque à installer : « DHT sensor library » (Adafruit)
- 
-#include &lt;WiFi.h&gt;
-#include &lt;WebServer.h&gt;
-#include &lt;DHT.h&gt;
- 
-const char* ssid = &quot;NOM_DU_RESEAU&quot;;      // nom du réseau Wi-Fi (2,4 GHz)
-const char* password = &quot;MOT_DE_PASSE&quot;;   // mot de passe du réseau Wi-Fi
- 
-const int DHT_PIN = 4;                   // broche DATA = D4
-DHT dht(DHT_PIN, DHT11);                 // capteur de type DHT11
-WebServer server(80);                    // serveur web sur le port 80
- 
-float temperature = 0;                   // dernière mesure valide (°C)
-float humidite = 0;                      // dernière mesure valide (%)
-bool erreur_capteur = true;              // vrai tant qu&#x27;aucune mesure valide n&#x27;a été faite
-unsigned long derniereMesure = 0;        // instant de la dernière mesure (ms)
-const unsigned long PERIODE = 5000;      // une mesure toutes les 5 s
- 
-// Historique des mesures, gardé dans la mémoire de la carte (effacé si la carte redémarre)
-const int NB_MAX = 360;                  // 360 mesures x 5 s = 30 minutes
-float histT[NB_MAX];                     // températures (°C)
-float histH[NB_MAX];                     // humidités (%)
-unsigned long histTemps[NB_MAX];         // instant de chaque mesure (s depuis le démarrage)
-int nbMesures = 0;                       // nombre de mesures enregistrées
- 
-// Ajoute une mesure à l&#x27;historique
-void enregistrer(float t, float h) {
-  if (nbMesures == NB_MAX) {             // historique plein : on oublie la mesure la plus ancienne
-    for (int i = 1; i &lt; NB_MAX; i++) {
-      histT[i - 1] = histT[i];
-      histH[i - 1] = histH[i];
-      histTemps[i - 1] = histTemps[i];
-    }
-    nbMesures--;
-  }
-  histT[nbMesures] = t;
-  histH[nbMesures] = h;
-  histTemps[nbMesures] = millis() / 1000;
-  nbMesures++;
-}
- 
-// Demande une mesure au capteur et la garde en mémoire
-void mesurer() {
-  float t = dht.readTemperature();       // température en °C
-  float h = dht.readHumidity();          // humidité relative en %
-  if (isnan(t) || isnan(h)) {            // isnan() : la mesure a échoué
-    erreur_capteur = true;
-    Serial.println(&quot;Erreur de lecture du DHT11 !&quot;);
-  } else {
-    erreur_capteur = false;
-    temperature = t;
-    humidite = h;
-    enregistrer(t, h);
-    Serial.print(&quot;Temperature : &quot;);
-    Serial.print(t);
-    Serial.print(&quot; C   Humidite : &quot;);
-    Serial.print(h);
-    Serial.println(&quot; %&quot;);
-  }
-}
- 
-// Dessine une jauge en demi-cercle (image SVG) : l&#x27;arc coloré va de mini à la valeur
-String jauge(String titre, float valeur, float mini, float maxi, int decimales, String unite, String couleur) {
-  float k = constrain((valeur - mini) / (maxi - mini), 0.001, 1);   // fraction de 0 à 1
-  float angle = PI * (1 - k);            // 180° pour mini, 0° pour maxi
-  float x = 100 + 80 * cos(angle);       // bout de l&#x27;arc coloré
-  float y = 100 - 80 * sin(angle);
-  String s = &quot;&lt;svg width=&#x27;200&#x27; height=&#x27;140&#x27; viewBox=&#x27;0 0 200 140&#x27;&gt;&quot;;
-  s += &quot;&lt;path d=&#x27;M20,100 A80,80 0 0 1 180,100&#x27; fill=&#x27;none&#x27; stroke=&#x27;#ddd&#x27; stroke-width=&#x27;16&#x27;/&gt;&quot;;
-  s += &quot;&lt;path d=&#x27;M20,100 A80,80 0 0 1 &quot; + String(x, 1) + &quot;,&quot; + String(y, 1) + &quot;&#x27; fill=&#x27;none&#x27; stroke=&#x27;&quot; + couleur + &quot;&#x27; stroke-width=&#x27;16&#x27;/&gt;&quot;;
-  s += &quot;&lt;text x=&#x27;100&#x27; y=&#x27;92&#x27; text-anchor=&#x27;middle&#x27; font-size=&#x27;26&#x27; font-weight=&#x27;bold&#x27;&gt;&quot; + String(valeur, decimales) + &quot; &quot; + unite + &quot;&lt;/text&gt;&quot;;
-  s += &quot;&lt;text x=&#x27;20&#x27; y=&#x27;120&#x27; text-anchor=&#x27;middle&#x27; font-size=&#x27;12&#x27;&gt;&quot; + String(mini, 0) + &quot;&lt;/text&gt;&quot;;
-  s += &quot;&lt;text x=&#x27;180&#x27; y=&#x27;120&#x27; text-anchor=&#x27;middle&#x27; font-size=&#x27;12&#x27;&gt;&quot; + String(maxi, 0) + &quot;&lt;/text&gt;&quot;;
-  s += &quot;&lt;text x=&#x27;100&#x27; y=&#x27;135&#x27; text-anchor=&#x27;middle&#x27; font-size=&#x27;14&#x27;&gt;&quot; + titre + &quot;&lt;/text&gt;&quot;;
-  s += &quot;&lt;/svg&gt;&quot;;
-  return s;
-}
- 
-// Dessine les courbes de l&#x27;historique (image SVG) : température de 0 à 50 °C, humidité de 0 à 100 %
-String courbe() {
-  String s = &quot;&lt;svg width=&#x27;100%&#x27; viewBox=&#x27;0 0 680 260&#x27; style=&#x27;max-width:680px&#x27;&gt;&quot;;
-  for (int i = 0; i &lt;= 4; i++) {         // 5 lignes horizontales de graduation
-    int y = 220 - 50 * i;
-    s += &quot;&lt;line x1=&#x27;40&#x27; y1=&#x27;&quot; + String(y) + &quot;&#x27; x2=&#x27;640&#x27; y2=&#x27;&quot; + String(y) + &quot;&#x27; stroke=&#x27;#ddd&#x27;/&gt;&quot;;
-    s += &quot;&lt;text x=&#x27;34&#x27; y=&#x27;&quot; + String(y + 4) + &quot;&#x27; text-anchor=&#x27;end&#x27; font-size=&#x27;11&#x27; fill=&#x27;#c2410c&#x27;&gt;&quot; + String(i * 12.5, 1) + &quot;&lt;/text&gt;&quot;;
-    s += &quot;&lt;text x=&#x27;646&#x27; y=&#x27;&quot; + String(y + 4) + &quot;&#x27; font-size=&#x27;11&#x27; fill=&#x27;#2b5fd6&#x27;&gt;&quot; + String(i * 25) + &quot;&lt;/text&gt;&quot;;
-  }
-  String ptsT = &quot;&quot;, ptsH = &quot;&quot;;           // listes de points &quot;x,y x,y ...&quot;
-  for (int i = 0; i &lt; nbMesures; i++) {
-    float x = 40 + 600.0 * i / (NB_MAX - 1);
-    ptsT += String(x, 1) + &quot;,&quot; + String(220 - histT[i] * 200 / 50, 1) + &quot; &quot;;
-    ptsH += String(x, 1) + &quot;,&quot; + String(220 - histH[i] * 200 / 100, 1) + &quot; &quot;;
-  }
-  s += &quot;&lt;polyline points=&#x27;&quot; + ptsT + &quot;&#x27; fill=&#x27;none&#x27; stroke=&#x27;#c2410c&#x27; stroke-width=&#x27;2&#x27;/&gt;&quot;;
-  s += &quot;&lt;polyline points=&#x27;&quot; + ptsH + &quot;&#x27; fill=&#x27;none&#x27; stroke=&#x27;#2b5fd6&#x27; stroke-width=&#x27;2&#x27;/&gt;&quot;;
-  s += &quot;&lt;text x=&#x27;40&#x27; y=&#x27;245&#x27; font-size=&#x27;12&#x27; fill=&#x27;#c2410c&#x27;&gt;— température (°C)&lt;/text&gt;&quot;;
-  s += &quot;&lt;text x=&#x27;640&#x27; y=&#x27;245&#x27; text-anchor=&#x27;end&#x27; font-size=&#x27;12&#x27; fill=&#x27;#2b5fd6&#x27;&gt;humidité (%) —&lt;/text&gt;&quot;;
-  s += &quot;&lt;/svg&gt;&quot;;
-  return s;
-}
- 
-// Construit la page HTML envoyée au navigateur
-String page() {
-  String html = &quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&quot;;
-  html += &quot;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width&#x27;&gt;&quot;;
-  html += &quot;&lt;meta http-equiv=&#x27;refresh&#x27; content=&#x27;5&#x27;&gt;&quot;;   // le navigateur redemande la page toutes les 5 s
-  html += &quot;&lt;/head&gt;&lt;body style=&#x27;font-family:sans-serif&#x27;&gt;&quot;;
-  html += &quot;&lt;h1&gt;Station météo&lt;/h1&gt;&quot;;
-  if (erreur_capteur) {
-    html += &quot;&lt;p style=&#x27;color:#c00&#x27;&gt;&lt;b&gt;Erreur de lecture du DHT11 !&lt;/b&gt;&lt;/p&gt;&quot;;
-  } else {
-    html += jauge(&quot;Température&quot;, temperature, 0, 50, 1, &quot;°C&quot;, &quot;#c2410c&quot;);
-    html += jauge(&quot;Humidité&quot;, humidite, 0, 100, 0, &quot;%&quot;, &quot;#2b5fd6&quot;);
-  }
-  html += &quot;&lt;p&gt;Dernière mesure il y a &quot; + String((millis() - derniereMesure) / 1000) + &quot; s&lt;/p&gt;&quot;;
-  html += &quot;&lt;h2&gt;Historique (&quot; + String(nbMesures) + &quot; mesures, 30 min au maximum)&lt;/h2&gt;&quot;;
-  html += courbe();
-  html += &quot;&lt;p&gt;&lt;a href=&#x27;/mesures.csv&#x27;&gt;Télécharger les mesures (fichier CSV)&lt;/a&gt;&lt;/p&gt;&quot;;
-  html += &quot;&lt;/body&gt;&lt;/html&gt;&quot;;
-  return html;
-}
- 
-// Écrit un nombre avec une virgule (format attendu par un tableur en français)
-String virgule(float v) {
-  String s = String(v, 1);
-  s.replace(&quot;.&quot;, &quot;,&quot;);
-  return s;
-}
- 
-// Appelée quand le navigateur demande l&#x27;adresse /
-void handleRoot() {
-  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
-}
- 
-// Appelée quand le navigateur demande l&#x27;adresse /mesures.csv : envoie l&#x27;historique en fichier CSV
-void handleCSV() {
-  String csv = &quot;\xEF\xBB\xBF&quot;;           // marque UTF-8 : le tableur affiche bien les accents
-  csv += &quot;temps (s);temperature (°C);humidite (%)\n&quot;;
-  for (int i = 0; i &lt; nbMesures; i++) {
-    csv += String(histTemps[i]) + &quot;;&quot; + virgule(histT[i]) + &quot;;&quot; + virgule(histH[i]) + &quot;\n&quot;;
-  }
-  server.sendHeader(&quot;Content-Disposition&quot;, &quot;attachment; filename=mesures.csv&quot;);   // à télécharger
-  server.send(200, &quot;text/csv; charset=utf-8&quot;, csv);
-}
- 
-void setup() {
-  Serial.begin(115200);
-  dht.begin();                           // démarrer le capteur
- 
-  WiFi.begin(ssid, password);            // connexion au Wi-Fi
-  Serial.print(&quot;Connexion au Wi-Fi&quot;);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(&quot;.&quot;);
-  }
-  Serial.println();
-  Serial.print(&quot;Adresse IP : &quot;);
-  Serial.println(WiFi.localIP());        // adresse à taper dans le navigateur
- 
-  server.on(&quot;/&quot;, handleRoot);            // adresse -&gt; fonction
-  server.on(&quot;/mesures.csv&quot;, handleCSV);
-  server.begin();                        // démarrage du serveur web
- 
-  mesurer();                             // première mesure
-  derniereMesure = millis();
-}
- 
-void loop() {
-  server.handleClient();                 // traite les requêtes des navigateurs
- 
-  // une mesure toutes les 5 s, sans bloquer le serveur web
-  if (millis() - derniereMesure &gt;= PERIODE) {
-    derniereMesure = millis();
-    mesurer();
-  }
-}</code></pre>
-<p class="pel"><em>Couleurs de l&#x27;Arduino IDE : orange = fonctions d&#x27;Arduino et des bibliothèques, bleu-vert = types et constantes, vert olive = structure du programme, gris = commentaires. Les noms en noir sont choisis par le programmeur.</em></p>
 </section>
 <footer>Céline Dobigeon — IUT, Université de Bordeaux · <a href="../index.html">Retour à l'accueil</a></footer>
 </div>
