@@ -203,7 +203,7 @@ footer{font-size:12.5px;color:var(--muted)}
   <header>
     <div class="eyebrow">TP IoT · ESP32 serveur web + DHT11</div>
     <h1>Lire la température et l'humidité sur une page web hébergée par l'ESP32</h1>
-    <p class="intro">Pas de cloud ici : l'ESP32 mesure l'air avec le DHT11 toutes les 5 s et garde en mémoire la <b>dernière mesure</b> et un <b>historique</b> de 30 minutes. Quand le navigateur du téléphone lui envoie une requête HTTP, la carte répond par une page avec deux jauges et les courbes de l'historique. La page demande au navigateur de la <b>recharger toutes les 5 s</b>, et l'historique peut être téléchargé en <b>fichier CSV</b>. À comparer avec <a href="../05_1_TP_Arduino_Cloud_DHT11/Animation_DHT11_Arduino_Cloud.html">la version Arduino Cloud</a> et avec <a href="../04_TP_Serveur_Web_LED/Animation_LED_Serveur_Web.html">le serveur web de la LED</a>.</p>
+    <p class="intro">Pas de cloud ici : l'ESP32 mesure l'air avec le DHT11 toutes les 5 s et garde en mémoire la <b>dernière mesure</b> et un <b>historique</b> de 30 minutes. Quand le navigateur du téléphone lui envoie une requête HTTP, la carte répond par une page avec deux jauges et les courbes de l'historique. La page demande au navigateur de la <b>recharger toutes les 5 s</b>, et l'historique peut être téléchargé en <b>fichier CSV</b>. À comparer avec <a href="../04_TP_Serveur_Web_LED/Animation_LED_Serveur_Web.html">le serveur web de la LED</a>.</p>
     <div class="legend" aria-label="Légende">
       <span class="c"><i></i><b>Requête HTTP</b>&nbsp;navigateur → carte</span>
       <span class="r"><i></i><b>Réponse</b>&nbsp;page HTML (carte → navigateur) ou mesure (capteur → carte)</span>
@@ -293,7 +293,7 @@ footer{font-size:12.5px;color:var(--muted)}
     <h2 id="hCmp">Arduino Cloud ou serveur web ?</h2>
     <div class="tbl">
       <table>
-        <thead><tr><th></th><th>Arduino Cloud (TP DHT11 précédent)</th><th>Serveur web sur l'ESP32 (ce TP)</th></tr></thead>
+        <thead><tr><th></th><th>Arduino Cloud</th><th>Serveur web sur l'ESP32 (ce TP)</th></tr></thead>
         <tbody>
           <tr><th>Qui prend l'initiative ?</th><td>La carte <b>envoie</b> ses mesures au cloud toutes les 10 s</td><td>Le navigateur <b>demande</b> la page toutes les 5 s ; la carte ne fait que répondre</td></tr>
           <tr><th>Historique</th><td>Enregistré par le cloud, sur de longues durées</td><td>Gardé dans la mémoire de la carte : 30 min au maximum, effacé si la carte redémarre</td></tr>
