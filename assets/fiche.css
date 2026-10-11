@@ -59,6 +59,11 @@ code{font-family:"IBM Plex Mono",monospace;font-size:.9em;background:var(--surfa
 pre{font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.55;overflow-x:auto;background:var(--surface);
   border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:0 9px 9px 0;padding:13px 15px;margin:0 0 14px;box-shadow:var(--shadow)}
 pre code{background:none;padding:0;font-size:inherit}
+.ar-fn{color:#D35400}.ar-type{color:#00979C}.ar-struct{color:#5E6D03}.ar-com{color:#7F8C8D}.ar-str{color:#005C5F}.ar-ctrl{color:#728E00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ar-fn{color:#F0964A}:root:not([data-theme="light"]) .ar-type{color:#4CC3C8}
+  :root:not([data-theme="light"]) .ar-struct{color:#A9BA4A}:root:not([data-theme="light"]) .ar-com{color:#8D9AA3}:root:not([data-theme="light"]) .ar-str{color:#6CB8BA}:root:not([data-theme="light"]) .ar-ctrl{color:#A8C84A}}
+:root[data-theme="dark"] .ar-fn{color:#F0964A}:root[data-theme="dark"] .ar-type{color:#4CC3C8}
+:root[data-theme="dark"] .ar-struct{color:#A9BA4A}:root[data-theme="dark"] .ar-com{color:#8D9AA3}:root[data-theme="dark"] .ar-str{color:#6CB8BA}:root[data-theme="dark"] .ar-ctrl{color:#A8C84A}
 .note{border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 9px 9px 0;padding:11px 15px;margin:0 0 14px;font-size:14.5px}
 .note p,.note ul{margin:0 0 6px}
 .note>:last-child{margin-bottom:0}

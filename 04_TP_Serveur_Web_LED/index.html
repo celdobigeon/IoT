@@ -123,80 +123,80 @@
 </section>
 <section><h2>Annexe – Programme du serveur web (fourni)</h2>
 <p class="pel"><em>Pour information : ce programme est déjà prêt, vous n&#x27;avez pas à le modifier. Vous retrouvez les mêmes lignes dans l&#x27;animation.</em></p>
-<pre><code>// TP IoT - Piloter une LED avec un serveur web sur ESP32
-// Carte : DOIT ESP32 DEVKIT V1 - LED + résistance 220 ohms sur la broche D26 (GPIO 26)
+<pre><code><span class="ar-com">// TP IoT - Piloter une LED avec un serveur web sur ESP32</span>
+<span class="ar-com">// Carte : DOIT ESP32 DEVKIT V1 - LED + résistance 220 ohms sur la broche D26 (GPIO 26)</span>
  
-#include &lt;WiFi.h&gt;
-#include &lt;WebServer.h&gt;
+<span class="ar-struct">#include</span> &lt;<span class="ar-fn">WiFi</span>.h&gt;
+<span class="ar-struct">#include</span> &lt;<span class="ar-fn">WebServer</span>.h&gt;
  
-const char* ssid = &quot;NOM_DU_RESEAU&quot;;      // nom du réseau Wi-Fi (2,4 GHz)
-const char* password = &quot;MOT_DE_PASSE&quot;;   // mot de passe du réseau Wi-Fi
+<span class="ar-type">const</span> <span class="ar-type">char</span>* ssid = <span class="ar-str">&quot;NOM_DU_RESEAU&quot;</span>;      <span class="ar-com">// nom du réseau Wi-Fi (2,4 GHz)</span>
+<span class="ar-type">const</span> <span class="ar-type">char</span>* password = <span class="ar-str">&quot;MOT_DE_PASSE&quot;</span>;   <span class="ar-com">// mot de passe du réseau Wi-Fi</span>
  
-const int LED_PIN = 26;
-WebServer server(80);                    // serveur web sur le port 80
-bool etat_led = false;
+<span class="ar-type">const</span> <span class="ar-type">int</span> LED_PIN = 26;
+<span class="ar-fn">WebServer</span> server(80);                    <span class="ar-com">// serveur web sur le port 80</span>
+<span class="ar-type">bool</span> etat_led = <span class="ar-type">false</span>;
  
-// Construit la page HTML envoyée au navigateur
-String page() {
-  String html = &quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&quot;;
-  html += &quot;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width&#x27;&gt;&lt;/head&gt;&lt;body&gt;&quot;;
-  html += &quot;&lt;h1&gt;LED : &quot;;
-  html += etat_led ? &quot;allumée&quot; : &quot;éteinte&quot;;
-  html += &quot;&lt;/h1&gt;&quot;;
-  // Voyant cliquable : il ouvre /off si la LED est allumée, /on si elle est éteinte
-  html += etat_led ? &quot;&lt;a href=&#x27;/off&#x27;&gt;&quot; : &quot;&lt;a href=&#x27;/on&#x27;&gt;&quot;;
-  html += &quot;&lt;div style=&#x27;width:80px;height:80px;border-radius:50%;border:3px solid #333;background:&quot;;
-  html += etat_led ? &quot;#ff2020;box-shadow:0 0 30px #ff2020&quot; : &quot;#555&quot;;
-  html += &quot;&#x27;&gt;&lt;/div&gt;&lt;/a&gt;&quot;;
-  html += &quot;&lt;p&gt;Appuyez sur le voyant pour &quot;;
-  html += etat_led ? &quot;éteindre&quot; : &quot;allumer&quot;;
-  html += &quot; la LED.&lt;/p&gt;&quot;;
-  html += &quot;&lt;/body&gt;&lt;/html&gt;&quot;;
-  return html;
+<span class="ar-com">// Construit la page HTML envoyée au navigateur</span>
+<span class="ar-type">String</span> page() {
+  <span class="ar-type">String</span> html = <span class="ar-str">&quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&quot;</span>;
+  html += <span class="ar-str">&quot;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width&#x27;&gt;&lt;/head&gt;&lt;body&gt;&quot;</span>;
+  html += <span class="ar-str">&quot;&lt;h1&gt;LED : &quot;</span>;
+  html += etat_led ? <span class="ar-str">&quot;allumée&quot;</span> : <span class="ar-str">&quot;éteinte&quot;</span>;
+  html += <span class="ar-str">&quot;&lt;/h1&gt;&quot;</span>;
+  <span class="ar-com">// Voyant cliquable : il ouvre /off si la LED est allumée, /on si elle est éteinte</span>
+  html += etat_led ? <span class="ar-str">&quot;&lt;a href=&#x27;/off&#x27;&gt;&quot;</span> : <span class="ar-str">&quot;&lt;a href=&#x27;/on&#x27;&gt;&quot;</span>;
+  html += <span class="ar-str">&quot;&lt;div style=&#x27;width:80px;height:80px;border-radius:50%;border:3px solid #333;background:&quot;</span>;
+  html += etat_led ? <span class="ar-str">&quot;#ff2020;box-shadow:0 0 30px #ff2020&quot;</span> : <span class="ar-str">&quot;#555&quot;</span>;
+  html += <span class="ar-str">&quot;&#x27;&gt;&lt;/div&gt;&lt;/a&gt;&quot;</span>;
+  html += <span class="ar-str">&quot;&lt;p&gt;Appuyez sur le voyant pour &quot;</span>;
+  html += etat_led ? <span class="ar-str">&quot;éteindre&quot;</span> : <span class="ar-str">&quot;allumer&quot;</span>;
+  html += <span class="ar-str">&quot; la LED.&lt;/p&gt;&quot;</span>;
+  html += <span class="ar-str">&quot;&lt;/body&gt;&lt;/html&gt;&quot;</span>;
+  <span class="ar-struct">return</span> html;
 }
  
-// Appelée quand le navigateur demande l&#x27;adresse /
-void handleRoot() {
-  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+<span class="ar-com">// Appelée quand le navigateur demande l&#x27;adresse /</span>
+<span class="ar-type">void</span> handleRoot() {
+  server.<span class="ar-fn">send</span>(200, <span class="ar-str">&quot;text/html; charset=utf-8&quot;</span>, page());
 }
  
-// Appelée quand le navigateur demande l&#x27;adresse /on
-void handleOn() {
-  digitalWrite(LED_PIN, HIGH);
-  etat_led = digitalRead(LED_PIN);
-  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+<span class="ar-com">// Appelée quand le navigateur demande l&#x27;adresse /on</span>
+<span class="ar-type">void</span> handleOn() {
+  <span class="ar-fn">digitalWrite</span>(LED_PIN, <span class="ar-type">HIGH</span>);
+  etat_led = <span class="ar-fn">digitalRead</span>(LED_PIN);
+  server.<span class="ar-fn">send</span>(200, <span class="ar-str">&quot;text/html; charset=utf-8&quot;</span>, page());
 }
  
-// Appelée quand le navigateur demande l&#x27;adresse /off
-void handleOff() {
-  digitalWrite(LED_PIN, LOW);
-  etat_led = digitalRead(LED_PIN);
-  server.send(200, &quot;text/html; charset=utf-8&quot;, page());
+<span class="ar-com">// Appelée quand le navigateur demande l&#x27;adresse /off</span>
+<span class="ar-type">void</span> handleOff() {
+  <span class="ar-fn">digitalWrite</span>(LED_PIN, <span class="ar-type">LOW</span>);
+  etat_led = <span class="ar-fn">digitalRead</span>(LED_PIN);
+  server.<span class="ar-fn">send</span>(200, <span class="ar-str">&quot;text/html; charset=utf-8&quot;</span>, page());
 }
  
-void setup() {
-  Serial.begin(115200);
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
+<span class="ar-type">void</span> <span class="ar-struct">setup</span>() {
+  <span class="ar-fn">Serial</span>.<span class="ar-fn">begin</span>(115200);
+  <span class="ar-fn">pinMode</span>(LED_PIN, <span class="ar-type">OUTPUT</span>);
+  <span class="ar-fn">digitalWrite</span>(LED_PIN, <span class="ar-type">LOW</span>);
  
-  WiFi.begin(ssid, password);            // connexion au Wi-Fi
-  Serial.print(&quot;Connexion au Wi-Fi&quot;);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(&quot;.&quot;);
+  <span class="ar-fn">WiFi</span>.<span class="ar-fn">begin</span>(ssid, password);            <span class="ar-com">// connexion au Wi-Fi</span>
+  <span class="ar-fn">Serial</span>.<span class="ar-fn">print</span>(<span class="ar-str">&quot;Connexion au Wi-Fi&quot;</span>);
+  <span class="ar-struct">while</span> (<span class="ar-fn">WiFi</span>.<span class="ar-fn">status</span>() != <span class="ar-type">WL_CONNECTED</span>) {
+    <span class="ar-fn">delay</span>(500);
+    <span class="ar-fn">Serial</span>.<span class="ar-fn">print</span>(<span class="ar-str">&quot;.&quot;</span>);
   }
-  Serial.println();
-  Serial.print(&quot;Adresse IP : &quot;);
-  Serial.println(WiFi.localIP());        // adresse à taper dans le navigateur
+  <span class="ar-fn">Serial</span>.<span class="ar-fn">println</span>();
+  <span class="ar-fn">Serial</span>.<span class="ar-fn">print</span>(<span class="ar-str">&quot;Adresse IP : &quot;</span>);
+  <span class="ar-fn">Serial</span>.<span class="ar-fn">println</span>(<span class="ar-fn">WiFi</span>.<span class="ar-fn">localIP</span>());        <span class="ar-com">// adresse à taper dans le navigateur</span>
  
-  server.on(&quot;/&quot;, handleRoot);            // adresse -&gt; fonction
-  server.on(&quot;/on&quot;, handleOn);
-  server.on(&quot;/off&quot;, handleOff);
-  server.begin();                        // démarrage du serveur web
+  server.<span class="ar-fn">on</span>(<span class="ar-str">&quot;/&quot;</span>, handleRoot);            <span class="ar-com">// adresse -&gt; fonction</span>
+  server.<span class="ar-fn">on</span>(<span class="ar-str">&quot;/on&quot;</span>, handleOn);
+  server.<span class="ar-fn">on</span>(<span class="ar-str">&quot;/off&quot;</span>, handleOff);
+  server.<span class="ar-fn">begin</span>();                        <span class="ar-com">// démarrage du serveur web</span>
 }
  
-void loop() {
-  server.handleClient();                 // traite les requêtes des navigateurs
+<span class="ar-type">void</span> <span class="ar-struct">loop</span>() {
+  server.<span class="ar-fn">handleClient</span>();                 <span class="ar-com">// traite les requêtes des navigateurs</span>
 }</code></pre>
 <p class="pel"><em>Couleurs de l&#x27;Arduino IDE : orange = fonctions d&#x27;Arduino et des bibliothèques, bleu-vert = types et constantes, vert olive = structure du programme, gris = commentaires. Les noms en noir sont choisis par le programmeur.</em></p>
 </section>
