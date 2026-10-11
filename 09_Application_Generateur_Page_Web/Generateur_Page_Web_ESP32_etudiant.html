@@ -187,6 +187,8 @@ dialog#ask{border:1px solid var(--line);border-radius:14px;background:var(--surf
         <button class="btn add" data-comp="analog">Entrée analogique</button>
         <button class="btn add" data-comp="digital">Entrée tout-ou-rien</button>
         <button class="btn add" data-comp="sortie">Sortie (LED, relais…)</button>
+        <button class="btn add" data-comp="ultrason">Capteur ultrason HC-SR04</button>
+        <button class="btn add" data-comp="servo">Servomoteur SG90</button>
       </div>
       <p class="hint"><b>Entrée analogique</b> : potentiomètre, photorésistance, capteur d'humidité du sol… <b>Tout-ou-rien</b> : bouton, interrupteur, capteur de présence. Le Wi-Fi doit être en 2,4 GHz ; le mot de passe est écrit en clair dans le programme.</p>
     </section>
@@ -559,8 +561,19 @@ const COMP = {
   dht11: { nom: "Capteur DHT11", unique: true, defaut: { pin: 4 } },
   analog: { nom: "Entrée analogique", defaut: { nom: "Potentiomètre", pin: 34, unite: "%", min: 0, max: 100, dec: 0, couleur: "#8b5cf6" } },
   digital: { nom: "Entrée tout-ou-rien", defaut: { nom: "Bouton", pin: 27, cablage: "gnd", on: "appuyé", off: "relâché", couleur: "#0ea5e9" } },
-  sortie: { nom: "Sortie", defaut: { nom: "LED", pin: 26, on: "allumée", off: "éteinte", couleur: "#ff2020" } }
+  sortie: { nom: "Sortie", defaut: { nom: "LED", pin: 26, on: "allumée", off: "éteinte", couleur: "#ff2020", commande: "page", autoSrc: "", autoCond: "<", s1: 60, s2: 120 } },
+  ultrason: { nom: "Capteur ultrason HC-SR04", defaut: { nom: "Distance", trig: 5, echo: 18, unite: "mm", min: 0, max: 500, dec: 0, couleur: "#0ca678" } },
+  servo: { nom: "Servomoteur SG90", defaut: { nom: "Servo", pin: 22, commande: "page", suit: "", couleur: "#f08c00" } }
 };
+// broches occupées par un composant
+const pinsComp = k => k.type === "ultrason" ? [+k.trig, +k.echo] : [+k.pin];
+// condition d'une sortie automatique (texte C++ et test JavaScript)
+const COND_AUTO = { "<": "inférieure à", ">": "supérieure à", "entre": "comprise entre" };
+function condAutoCpp(k, v) { const a = cnum(num(k.s1, 0)), b = cnum(num(k.s2, 0)); return k.autoCond === "entre" ? v + " >= " + a + " && " + v + " <= " + b : v + " " + (k.autoCond === ">" ? ">" : "<") + " " + a; }
+function condAutoJs(k, v) { const a = num(k.s1, 0), b = num(k.s2, 0); return k.autoCond === "entre" ? v >= a && v <= b : k.autoCond === ">" ? v > a : v < a; }
+// bloc compatible avec une source (blocs à une seule valeur)
+const UNIQUE = ["une", "sortie", "servo"];
+function srcCompatible(F, S) { return F.src === "une" || (F.src === "sortie" && S.sortie && !S.auto) || (F.src === "servo" && S.servo && S.comp.commande !== "suit"); }
 const slug = s => { let n = String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); if (!/^[a-z]/.test(n)) n = "v_" + n; return n.slice(0, 24).replace(/_+$/, ""); };
 
 function sources(c) {
@@ -580,7 +593,13 @@ function sources(c) {
       out.push({ key: k.id + ":v", comp: k, var: v, nom: k.nom, unite: "", min: 0, max: 1, dec: 0, couleur: okColor(k.couleur), bool: true, on: k.on, off: k.off });
     } else if (k.type === "sortie") {
       const r = slug(k.nom), v = unique("etat_" + r);
-      out.push({ key: k.id + ":v", comp: k, var: v, route: v.replace(/^etat_/, ""), nom: k.nom, unite: "", min: 0, max: 1, dec: 0, couleur: okColor(k.couleur), bool: true, sortie: true, on: k.on, off: k.off });
+      out.push({ key: k.id + ":v", comp: k, var: v, route: v.replace(/^etat_/, ""), nom: k.nom, unite: "", min: 0, max: 1, dec: 0, couleur: okColor(k.couleur), bool: true, sortie: true, auto: k.commande === "auto", on: k.on, off: k.off });
+    } else if (k.type === "ultrason") {
+      const v = unique(slug(k.nom));
+      out.push({ key: k.id + ":v", comp: k, var: v, nom: k.nom, unite: k.unite === "cm" ? "cm" : "mm", min: num(k.min, 0), max: num(k.max, 500), dec: parseInt(k.dec) || 0, couleur: okColor(k.couleur), ultrason: true });
+    } else if (k.type === "servo") {
+      const v = unique(slug(k.nom));
+      out.push({ key: k.id + ":v", comp: k, var: v, route: v, nom: k.nom + " (angle)", unite: "°", min: 0, max: 180, dec: 0, couleur: okColor(k.couleur), servo: true });
     }
   }
   return out;
@@ -648,7 +667,7 @@ const FORMES = {
       const c = condDe(b, S), t = clamp(parseInt(b.taille) || 70, 20, 180);
       const dessin = call("voyant", A.cond(c), A.n(t), A.str(okColor(b.couleur)));
       // sortie + case cochée : le voyant devient un lien vers /…/off s'il est allumé, vers /…/on s'il est éteint
-      const inner = S.sortie && b.cliquable
+      const inner = S.sortie && !S.auto && b.cliquable
         ? [IF(c.cpp, c.js, [L("<a href='/" + S.route + "/off' title='Cliquer pour éteindre'>")], [L("<a href='/" + S.route + "/on' title='Cliquer pour allumer'>")]), dessin, L("</a>")]
         : [dessin];
       if (b.etatTexte) inner.push(L("<div style='font-size:18px;font-weight:bold;margin-top:10px'>"), IF(c.cpp, c.js, [L(esc(b.on))], [L(esc(b.off))]), L("</div>"));
@@ -710,6 +729,22 @@ const FORMES = {
       const r = "/" + S.route, on = s => (s.v[S.var] || 0) > 0.5;
       const inner = [IF(S.var, on, [L("<a href='" + r + "/off'>")], [L("<a href='" + r + "/on'>")]), call("interrupteur", { cpp: S.var, js: on }, A.str(okColor(b.couleur))), L("</a>")];
       if (b.etatTexte) inner.push(L("<div style='font-size:16px;font-weight:bold;margin-top:6px'>"), IF(S.var, on, [L(esc(S.on))], [L(esc(S.off))]), L("</div>"));
+      return bloc(b, ctx, inner);
+    } },
+
+  angle: { nom: "Commande d'angle", g: 2, desc: "Des boutons pour tourner le servomoteur à un angle choisi.", src: "servo", larg: 1,
+    defaut: { angles: "0, 45, 90, 135, 180", pas: 10, couleur: "#f08c00" },
+    champs: [["angles", "Angles des boutons (en degrés, séparés par des virgules)", "text", { full: 1 }], ["pas", "Boutons – et + (degrés, 0 pour aucun)", "number"], ["couleur", "Couleur des boutons", "color"]],
+    parts(b, ctx, S) {
+      const r = "/" + S.route + "/angle?v=", c = okColor(b.couleur), pas = clamp(parseInt(b.pas) || 0, 0, 90);
+      const angles = String(b.angles).split(/[,; ]+/).map(x => parseInt(x)).filter(x => !isNaN(x)).map(x => clamp(x, 0, 180));
+      const st = "display:inline-block;min-width:44px;padding:8px 10px;margin:3px;border-radius:8px;background:" + c + ";color:#fff;text-decoration:none;font-weight:bold";
+      const inner = [L("<div style='font-size:34px;font-weight:bold;line-height:1.1'>"), E("String(" + S.var + ")", s => String(Math.round(s.v[S.var] || 0))), L(" °</div><div style='margin-top:8px'>")];
+      angles.forEach(a => inner.push(L("<a href='" + r + a + "' style='" + st + "'>" + a + "°</a>")));
+      inner.push(L("</div>"));
+      if (pas) inner.push(L("<div><a href='" + r), E("String(constrain(" + S.var + " - " + pas + ", 0, 180))", s => String(clamp(Math.round(s.v[S.var] || 0) - pas, 0, 180))),
+        L("' style='" + st + "'>– " + pas + "°</a><a href='" + r), E("String(constrain(" + S.var + " + " + pas + ", 0, 180))", s => String(clamp(Math.round(s.v[S.var] || 0) + pas, 0, 180))),
+        L("' style='" + st + "'>+ " + pas + "°</a></div>"));
       return bloc(b, ctx, inner);
     } },
 
@@ -777,8 +812,8 @@ function nouveauBloc(c, forme, srcKey, props) {
   const F = FORMES[forme];
   const b = Object.assign({ id: uid++, forme, largeur: String(F.larg), titre: "" }, JSON.parse(JSON.stringify(F.defaut || {})));
   const SS = sources(c);
-  if (F.src === "une" || F.src === "sortie") {
-    const ok = SS.filter(S => F.src === "une" || S.sortie);
+  if (UNIQUE.includes(F.src)) {
+    const ok = SS.filter(S => srcCompatible(F, S));
     const S = ok.find(S => S.key === srcKey) || ok[0];
     if (S) appliquerSource(b, S);
   } else if (F.src === "plusieurs") {
@@ -796,14 +831,14 @@ function appliquerSource(b, S) {
   b.seuil = S.bool ? 0.5 : Math.round((S.min + 0.6 * r) * 10) / 10; b.seuil2 = S.bool ? 1 : Math.round((S.min + 0.8 * r) * 10) / 10;
   if (S.bool) { b.on = S.on; b.off = S.off; }
   else if (FORMES[b.forme].src === "une") { b.on = b.forme === "voyant" ? "alerte" : "Trop haut"; b.off = b.forme === "voyant" ? "normal" : "Normal"; }
-  if (S.sortie && FORMES[b.forme].src === "sortie") { b.titre = S.nom; }
+  if ((S.sortie || S.servo) && ["sortie", "servo"].includes(FORMES[b.forme].src)) { b.titre = S.nom; }
 }
 function changerForme(b, forme) {
   const F = FORMES[forme], S = srcByKey(b.src || (b.srcs || [])[0]);
   Object.keys(F.defaut || {}).forEach(k => { if (b[k] === undefined) b[k] = JSON.parse(JSON.stringify(F.defaut[k])); });
   b.forme = forme; b.largeur = String(F.larg);
-  if ((F.src === "une" || F.src === "sortie") && (!S || (F.src === "sortie" && !S.sortie))) { const n = nouveauBloc(cfg, forme); Object.assign(b, n, { id: b.id }); }
-  else if (S && (F.src === "une" || F.src === "sortie")) appliquerSource(b, S);
+  if (UNIQUE.includes(F.src) && (!S || !srcCompatible(F, S))) { const n = nouveauBloc(cfg, forme); Object.assign(b, n, { id: b.id }); }
+  else if (S && UNIQUE.includes(F.src)) appliquerSource(b, S);
   if (F.src === "plusieurs" && !(b.srcs && b.srcs.length)) { const n = nouveauBloc(cfg, forme, S && !S.sortie ? S.key : undefined); b.srcs = n.srcs; b.min = n.min; b.max = n.max; }
 }
 
@@ -841,7 +876,8 @@ function blocProbleme(b, c) {
   const F = FORMES[b.forme], SS = sources(c);
   if (F.besoinDht && !c.comps.some(k => k.type === "dht11")) return "Ce bloc a besoin du capteur DHT11 : ajoutez-le dans « Ma carte ».";
   if (F.src === "une" && !SS.find(S => S.key === b.src)) return "Choisissez la valeur à afficher (ajoutez d'abord un composant dans « Ma carte »).";
-  if (F.src === "sortie" && !SS.find(S => S.key === b.src && S.sortie)) return "Ce bloc commande une sortie : ajoutez une sortie (LED, relais…) dans « Ma carte ».";
+  if (F.src === "sortie" && !SS.find(S => S.key === b.src && srcCompatible(F, S))) return "Ce bloc commande une sortie : ajoutez une sortie (LED, relais…) commandée depuis le tableau de bord dans « Ma carte ».";
+  if (F.src === "servo" && !SS.find(S => S.key === b.src && srcCompatible(F, S))) return "Ce bloc commande un servomoteur : ajoutez un servomoteur commandé depuis le tableau de bord dans « Ma carte ».";
   if (F.src === "plusieurs" && !(b.srcs || []).some(k => SS.find(S => S.key === k))) return "Cochez au moins une valeur.";
   if (F.hist && F.src === "aucune" && !SS.length) return "Il n'y a aucune mesure à enregistrer : ajoutez un composant dans « Ma carte ».";
   if (b.min !== undefined && ["une", "plusieurs"].includes(F.src) && !["chiffre", "feu", "voyant", "etat", "statistiques"].includes(b.forme) && num(b.max, 0) <= num(b.min, 0)) return "Le maximum doit être plus grand que le minimum.";
@@ -852,7 +888,7 @@ function contexte(c) {
   const SS = sources(c), blocs = c.blocs.filter(b => !blocProbleme(b, c));
   const hist = blocs.some(b => FORMES[b.forme].hist);
   return { page: c.page, src: k => SS.find(S => S.key === k), sources: SS, blocs, hist, duree: dureeHist(c.periode),
-    dht: c.comps.some(k => k.type === "dht11"), entrees: SS.filter(S => S.analog || (S.bool && !S.sortie)), sorties: SS.filter(S => S.sortie),
+    dht: c.comps.some(k => k.type === "dht11"), entrees: SS.filter(S => S.analog || S.ultrason || (S.bool && !S.sortie)), sorties: SS.filter(S => S.sortie), servos: SS.filter(S => S.servo),
     mesure: hist || SS.some(S => !S.sortie) };
 }
 function morceauxBlocs(ctx) {
@@ -919,16 +955,23 @@ const pad = (t, n) => t + " ".repeat(Math.max(1, n - t.length));
 function programme() {
   const ctx = contexte(), SS = ctx.sources, p = cfg.page, r = parseInt(p.refresh) || 0, per = parseInt(cfg.periode) || 5;
   const dht = cfg.comps.find(k => k.type === "dht11"), hist = ctx.hist, mesure = ctx.mesure, entrees = ctx.entrees, sorties = ctx.sorties;
+  const servos = ctx.servos, suiveurs = servos.filter(S => S.comp.commande === "suit" && SS.find(A => A.key === S.comp.suit && A.analog));
+  const autos = sorties.filter(S => S.auto && SS.find(A => A.key === S.comp.autoSrc)), commandes = sorties.filter(S => !S.auto);
+  const lecture = entrees.length;
   const o = [];
   o.push("// Tableau de bord fabriqué avec le générateur de page web ESP32 (TP IdO)", "// Carte : DOIT ESP32 DEVKIT V1", "// Branchements :");
   if (dht) o.push("//   - module DHT11 : S sur " + pinNom(dht.pin) + ", + sur 3V3, - sur GND");
   SS.filter(S => S.analog).forEach(S => o.push("//   - " + S.nom + " (entrée analogique) : signal sur " + pinNom(S.comp.pin) + ", alimentation 3V3 et GND"));
   SS.filter(S => S.bool && !S.sortie).forEach(S => o.push("//   - " + S.nom + " (entrée tout-ou-rien) sur " + pinNom(S.comp.pin) + (S.comp.cablage === "gnd" ? ", l'autre patte sur GND" : ", signal à 3,3 V quand il est actif")));
   sorties.forEach(S => o.push("//   - " + S.nom + " (sortie) sur " + pinNom(S.comp.pin) + (/led/i.test(S.nom) ? " avec une résistance de 220 ohms vers GND" : "")));
+  SS.filter(S => S.ultrason).forEach(S => o.push("//   - " + S.nom + " (capteur ultrason HC-SR04) : VCC sur VIN (5 V), TRIG sur " + pinNom(+S.comp.trig) + ", ECHO sur " + pinNom(+S.comp.echo) + " par un pont diviseur 1 kohm / 2 kohms, GND sur GND"));
+  servos.forEach(S => o.push("//   - " + S.comp.nom + " (servomoteur SG90) : fil orange (signal) sur " + pinNom(+S.comp.pin) + ", fil rouge sur 3V3 (ou VIN), fil marron sur GND"));
   if (!SS.length) o.push("//   - rien (page fixe)");
   if (dht) o.push("// Bibliothèque à installer : « DHT sensor library » (Adafruit)");
+  if (servos.length) o.push("// Bibliothèque à installer : « ESP32Servo » (Kevin Harrington)");
   o.push("", "#include <WiFi.h>", "#include <WebServer.h>");
   if (dht) o.push("#include <DHT.h>");
+  if (servos.length) o.push("#include <ESP32Servo.h>");
   o.push("", pad("const char* ssid = " + q(ssid) + ";", 41) + "// nom du réseau Wi-Fi (2,4 GHz)", pad("const char* password = " + q(mdp) + ";", 41) + "// mot de passe du réseau Wi-Fi", "",
     "WebServer server(80);                    // serveur web sur le port 80");
 
@@ -938,7 +981,11 @@ function programme() {
     pad("float " + S.var + " = 0;", 41) + "// valeur convertie" + (S.unite ? " (" + S.unite + ")" : "")));
   SS.filter(S => S.bool && !S.sortie).forEach(S => o.push("", "// --- " + S.nom + " : entrée tout-ou-rien ---", pad("const int " + PIN(S) + " = " + S.comp.pin + ";", 41) + "// broche",
     pad("bool " + S.var + " = false;", 41) + "// vrai si « " + S.on + " »"));
-  sorties.forEach(S => o.push("", "// --- " + S.nom + " : sortie ---", pad("const int " + PIN(S) + " = " + S.comp.pin + ";", 41) + "// broche", pad("bool " + S.var + " = false;", 41) + "// vrai si « " + S.on + " »"));
+  sorties.forEach(S => o.push("", "// --- " + S.nom + " : sortie" + (S.auto ? " automatique" : "") + " ---", pad("const int " + PIN(S) + " = " + S.comp.pin + ";", 41) + "// broche", pad("bool " + S.var + " = false;", 41) + "// vrai si « " + S.on + " »"));
+  SS.filter(S => S.ultrason).forEach(S => o.push("", "// --- " + S.nom + " : capteur ultrason HC-SR04 ---", pad("const int " + PIN(S) + "_TRIG = " + S.comp.trig + ";", 41) + "// broche TRIG (déclenchement)",
+    pad("const int " + PIN(S) + "_ECHO = " + S.comp.echo + ";", 41) + "// broche ECHO (écho, par le pont diviseur)", pad("float " + S.var + " = 0;", 41) + "// distance mesurée (" + S.unite + ")"));
+  servos.forEach(S => o.push("", "// --- " + S.comp.nom + " : servomoteur SG90 ---", pad("const int " + PIN(S) + " = " + S.comp.pin + ";", 41) + "// broche du signal",
+    pad("Servo srv_" + S.var + ";", 41) + "// le servomoteur", pad("int " + S.var + " = 90;", 41) + "// angle actuel (°)"));
 
   if (mesure) o.push("", "// --- Mesures ---", pad("const unsigned long PERIODE = " + per * 1000 + ";", 41) + "// une mesure toutes les " + per + " s", pad("unsigned long derniereMesure = 0;", 41) + "// instant de la dernière mesure (ms)");
   if (hist) {
@@ -951,20 +998,41 @@ function programme() {
     SS.forEach(S => o.push("  hist_" + S.var + "[nbMesures] = " + S.var + ";"));
     o.push("  histTemps[nbMesures] = millis() / 1000;", "  nbMesures++;", "}");
   }
-  if (entrees.length) {
-    o.push("", "// Lit les entrées analogiques et tout-ou-rien (lecture très rapide)", "void lireEntrees() {");
+  if (lecture) {
+    o.push("", "// Lit les entrées de la carte (capteurs, potentiomètres, boutons)", "void lireEntrees() {");
     entrees.forEach(S => {
-      if (S.analog) o.push("  " + S.var + " = " + cnum(S.min) + " + (" + cnum(S.max) + " - " + cnum(S.min) + ") * analogRead(" + PIN(S) + ") / 4095.0;   // 0 V -> " + cnum(S.min) + ", 3,3 V -> " + cnum(S.max));
+      if (S.ultrason) o.push("  digitalWrite(" + PIN(S) + "_TRIG, LOW);", "  delayMicroseconds(2);", pad("  digitalWrite(" + PIN(S) + "_TRIG, HIGH);", 41) + "// impulsion de 10 µs sur TRIG",
+        "  delayMicroseconds(10);", "  digitalWrite(" + PIN(S) + "_TRIG, LOW);",
+        "  unsigned long duree_" + S.var + " = pulseIn(" + PIN(S) + "_ECHO, HIGH, 30000);   // durée de l'écho en µs (0 si pas d'écho en 30 ms)",
+        "  if (duree_" + S.var + " > 0) {",
+        "    " + S.var + " = duree_" + S.var + " * " + (S.unite === "cm" ? "0.0343" : "0.343") + " / 2;   // aller-retour du son à 343 m/s -> " + S.unite, "  }");
+      else if (S.analog) o.push("  " + S.var + " = " + cnum(S.min) + " + (" + cnum(S.max) + " - " + cnum(S.min) + ") * analogRead(" + PIN(S) + ") / 4095.0;   // 0 V -> " + cnum(S.min) + ", 3,3 V -> " + cnum(S.max));
       else o.push("  " + S.var + " = (digitalRead(" + PIN(S) + ") == " + (S.comp.cablage === "gnd" ? "LOW" : "HIGH") + ");" + (S.comp.cablage === "gnd" ? "   // relié à GND quand il est actif" : ""));
     });
     o.push("}");
   }
+  if (suiveurs.length) {
+    o.push("", "// Le servomoteur suit l'entrée choisie : appelée à chaque tour de loop(), pour un mouvement fluide", "void suivre() {");
+    suiveurs.forEach(S => { const A = SS.find(x => x.key === S.comp.suit);
+      o.push("  " + A.var + " = " + cnum(A.min) + " + (" + cnum(A.max) + " - " + cnum(A.min) + ") * analogRead(" + PIN(A) + ") / 4095.0;   // lecture de " + A.nom,
+        "  " + S.var + " = constrain((" + A.var + " - " + cnum(A.min) + ") * 180 / (" + cnum(A.max) + " - " + cnum(A.min) + "), 0, 180);   // " + A.nom + " -> angle de 0° à 180°",
+        pad("  srv_" + S.var + ".write(" + S.var + ");", 41) + "// le servomoteur suit"); });
+    o.push("}");
+  }
+  if (autos.length) {
+    o.push("", "// Allume ou éteint les sorties automatiques selon les mesures", "void appliquerAutomatismes() {");
+    autos.forEach(S => { const A = SS.find(x => x.key === S.comp.autoSrc);
+      o.push(pad("  " + S.var + " = (" + condAutoCpp(S.comp, A.var) + ");", 41) + "// « " + S.nom + " » si " + A.nom + " " + COND_AUTO[S.comp.autoCond] + " " + (S.comp.autoCond === "entre" ? cnum(num(S.comp.s1, 0)) + " et " + cnum(num(S.comp.s2, 0)) : cnum(num(S.comp.s1, 0))),
+        "  digitalWrite(" + PIN(S) + ", " + S.var + " ? HIGH : LOW);"); });
+    o.push("}");
+  }
   if (mesure) {
     o.push("", "// Fait une mesure complète et la garde en mémoire", "void mesurer() {");
-    if (entrees.length) o.push("  lireEntrees();");
+    if (lecture) o.push("  lireEntrees();");
     if (dht) o.push("  float t = dht.readTemperature();       // température en °C", "  float h = dht.readHumidity();          // humidité relative en %",
       "  if (isnan(t) || isnan(h)) {            // isnan() : la mesure a échoué", "    erreur_capteur = true;", "    Serial.println(\"Erreur de lecture du DHT11 !\");",
       "    return;                              // rien n'est enregistré cette fois-ci", "  }", "  erreur_capteur = false;", "  temperature = t;", "  humidite = h;");
+    if (autos.length) o.push("  appliquerAutomatismes();");
     if (hist) o.push("  enregistrer();");
     SS.filter(S => !S.sortie).forEach((S, i, arr) => o.push("  Serial.print(\"" + S.var + " = \");", "  Serial." + (i === arr.length - 1 ? "println" : "print") + "(" + S.var + ");" + (i === arr.length - 1 ? "" : "  Serial.print(\"   \");")));
     o.push("}");
@@ -979,10 +1047,11 @@ function programme() {
   o.push("", "  html += " + q(h.fin) + ";", "  return html;", "}");
 
   o.push("", "// Appelée quand le navigateur demande l'adresse /", "void handleRoot() {");
-  if (entrees.length) o.push("  lireEntrees();                         // valeurs à jour au moment de la demande");
+  if (lecture) o.push("  lireEntrees();                         // valeurs à jour au moment de la demande");
+  if (autos.length) o.push("  appliquerAutomatismes();");
   sorties.forEach(S => o.push(pad("  " + S.var + " = digitalRead(" + PIN(S) + ");", 41) + "// état réel de « " + S.nom + " », lu sur la broche"));
   o.push("  server.send(200, \"text/html; charset=utf-8\", page());", "}");
-  sorties.forEach(S => {
+  commandes.forEach(S => {
     const n = S.route.split("_").map(x => x.charAt(0).toUpperCase() + x.slice(1)).join("");
     S._h = "handle" + n;
     const cmd = (niv, mot) => [
@@ -995,6 +1064,14 @@ function programme() {
     o.push("", "// Adresses /" + S.route + "/on et /" + S.route + "/off : commande de « " + S.nom + " »",
       "void " + S._h + "On() {", ...cmd("HIGH", "ON"), "}", "", "void " + S._h + "Off() {", ...cmd("LOW", "OFF"), "}");
   });
+  const angles = servos.filter(S => S.comp.commande !== "suit");
+  angles.forEach(S => {
+    S._h = "handle" + S.route.split("_").map(x => x.charAt(0).toUpperCase() + x.slice(1)).join("") + "Angle";
+    o.push("", "// Adresse /" + S.route + "/angle?v=90 : tourne « " + S.comp.nom + " » à l'angle demandé", "void " + S._h + "() {",
+      "  if (server.hasArg(\"v\")) {", pad("    " + S.var + " = constrain(server.arg(\"v\").toInt(), 0, 180);", 41) + "// angle demandé, entre 0 et 180°",
+      "    srv_" + S.var + ".write(" + S.var + ");", "    Serial.print(\"" + S.comp.nom.replace(/["\\]/g, "") + " : angle \");", "    Serial.println(" + S.var + ");", "  }",
+      "  server.sendHeader(\"Location\", \"/\");    // renvoie le navigateur vers le tableau de bord", "  server.send(303);", "}");
+  });
   if (hist) {
     o.push("", "// Écrit un nombre avec une virgule (format attendu par un tableur en français)", "String virgule(float v) {", "  String s = String(v, 2);", "  s.replace(\".\", \",\");", "  return s;", "}");
     o.push("", "// Adresse /mesures.csv : envoie l'historique en fichier CSV", "void handleCSV() {", "  String csv = \"\\xEF\\xBB\\xBF\";           // marque UTF-8 : le tableur affiche bien les accents",
@@ -1006,14 +1083,19 @@ function programme() {
   o.push("", "void setup() {", "  Serial.begin(115200);");
   sorties.forEach(S => o.push("  pinMode(" + PIN(S) + ", OUTPUT);", "  digitalWrite(" + PIN(S) + ", LOW);"));
   SS.filter(S => S.bool && !S.sortie).forEach(S => o.push("  pinMode(" + PIN(S) + ", " + (S.comp.cablage === "gnd" ? "INPUT_PULLUP" : "INPUT") + ");" + (S.comp.cablage === "gnd" ? "   // résistance interne vers 3,3 V" : "")));
+  SS.filter(S => S.ultrason).forEach(S => o.push("  pinMode(" + PIN(S) + "_TRIG, OUTPUT);", "  pinMode(" + PIN(S) + "_ECHO, INPUT);"));
+  servos.forEach(S => o.push(pad("  srv_" + S.var + ".setPeriodHertz(50);", 41) + "// signal PWM à 50 Hz pour le SG90",
+    pad("  srv_" + S.var + ".attach(" + PIN(S) + ", 500, 2400);", 41) + "// impulsion de 0,5 ms (0°) à 2,4 ms (180°)", "  srv_" + S.var + ".write(" + S.var + ");"));
   if (dht) o.push("  dht.begin();                           // démarrer le capteur");
   o.push("", "  WiFi.begin(ssid, password);            // connexion au Wi-Fi", "  Serial.print(\"Connexion au Wi-Fi\");", "  while (WiFi.status() != WL_CONNECTED) {", "    delay(500);", "    Serial.print(\".\");", "  }",
     "  Serial.println();", "  Serial.print(\"Adresse IP : \");", "  Serial.println(WiFi.localIP());        // adresse à taper dans le navigateur", "", "  server.on(\"/\", handleRoot);            // adresse -> fonction");
-  sorties.forEach(S => o.push("  server.on(\"/" + S.route + "/on\", " + S._h + "On);", "  server.on(\"/" + S.route + "/off\", " + S._h + "Off);"));
+  commandes.forEach(S => o.push("  server.on(\"/" + S.route + "/on\", " + S._h + "On);", "  server.on(\"/" + S.route + "/off\", " + S._h + "Off);"));
+  angles.forEach(S => o.push("  server.on(\"/" + S.route + "/angle\", " + S._h + ");"));
   if (hist) o.push("  server.on(\"/mesures.csv\", handleCSV);");
   o.push("  server.begin();                        // démarrage du serveur web");
   if (mesure) o.push("", "  mesurer();                             // première mesure", "  derniereMesure = millis();");
   o.push("}", "", "void loop() {", "  server.handleClient();                 // traite les requêtes des navigateurs");
+  if (suiveurs.length) o.push("  suivre();                              // le servomoteur suit l'entrée en continu");
   if (mesure) o.push("", "  // une mesure toutes les " + per + " s, sans bloquer le serveur web", "  if (millis() - derniereMesure >= PERIODE) {", "    derniereMesure = millis();", "    mesurer();", "  }");
   o.push("}", "");
   return o.join("\n");
@@ -1028,8 +1110,17 @@ const bruit = a => (Math.random() - 0.5) * 2 * a;
 function defautSim(S) { return S.var === "temperature" ? 22.4 : S.var === "humidite" ? 48 : S.bool ? 0 : Math.round((S.min + 0.62 * (S.max - S.min)) * 10) / 10; }
 function syncSim() {
   sources().forEach(S => {
-    if (sim.v[S.var] === undefined) sim.v[S.var] = defautSim(S);
+    if (sim.v[S.var] === undefined) sim.v[S.var] = S.servo ? 90 : defautSim(S);
     if (!sim.h[S.var] || sim.h[S.var].length !== sim.n) sim.h[S.var] = Array.from({ length: sim.n }, () => sim.v[S.var]);
+  });
+  autoSim();
+}
+// servomoteurs qui suivent une entrée, sorties automatiques
+function autoSim() {
+  const SS = sources();
+  SS.forEach(S => {
+    if (S.servo && S.comp.commande === "suit") { const A = SS.find(x => x.key === S.comp.suit); if (A) sim.v[S.var] = Math.round(clamp(((sim.v[A.var] || 0) - A.min) / ((A.max - A.min) || 1), 0, 1) * 180); }
+    if (S.auto) { const A = SS.find(x => x.key === S.comp.autoSrc); if (A) sim.v[S.var] = condAutoJs(S.comp, sim.v[A.var] || 0) ? 1 : 0; }
   });
 }
 function remplir(nb) {
@@ -1047,6 +1138,7 @@ function remplir(nb) {
   });
 }
 function mesurerSim() {
+  autoSim();
   const SS = sources();
   if (sim.err && SS.some(S => S.dht)) return;
   SS.forEach(S => {
@@ -1073,8 +1165,12 @@ function optsPins(liste, v) { return liste.map(p => "<option value='" + p + "'" 
 function champComp(k, cle, label, html) { return "<label class='f'><span>" + label + "</span>" + html + "</label>"; }
 function inputC(k, cle, type) { return "<input type='" + type + "' step='any' data-c='" + cle + "' value='" + esc(k[cle]) + "'>"; }
 function compProbleme(k) {
-  const autres = cfg.comps.filter(x => x !== k && +x.pin === +k.pin);
-  if (autres.length) return "La broche " + pinNom(+k.pin) + " est déjà utilisée par un autre composant.";
+  for (const p of pinsComp(k)) {
+    if (cfg.comps.some(x => x !== k && pinsComp(x).includes(p))) return "La broche " + pinNom(p) + " est déjà utilisée par un autre composant.";
+  }
+  if (k.type === "ultrason" && +k.trig === +k.echo) return "TRIG et ECHO doivent être sur deux broches différentes.";
+  if (k.type === "servo" && k.commande === "suit" && !sources().some(S => S.key === k.suit && S.analog)) return "Choisissez l'entrée analogique (potentiomètre…) que le servomoteur doit suivre.";
+  if (k.type === "sortie" && k.commande === "auto" && !sources().some(S => S.key === k.autoSrc)) return "Choisissez la mesure qui allume cette sortie.";
   if (k.type === "digital" && k.cablage === "gnd" && +k.pin >= 34) return "Les broches 34 à 39 n'ont pas de résistance interne : choisissez une autre broche ou le câblage « signal à 3,3 V ».";
   if (k.type === "analog" && num(k.max, 0) === num(k.min, 0)) return "Les valeurs à 0 V et à 3,3 V doivent être différentes.";
   return "";
@@ -1086,7 +1182,8 @@ function dessinerComps() {
   const SS = sources();
   ul.innerHTML = cfg.comps.map(k => {
     const open = compOuvert === k.id, pb = compProbleme(k), mes = SS.filter(S => S.comp === k);
-    let resume = k.type === "dht11" ? "température et humidité · " + pinNom(+k.pin) : (k.nom || "") + " · " + pinNom(+k.pin);
+    let resume = k.type === "dht11" ? "température et humidité · " + pinNom(+k.pin) : k.type === "ultrason" ? (k.nom || "") + " · TRIG " + pinNom(+k.trig) + ", ECHO " + pinNom(+k.echo)
+      : (k.nom || "") + " · " + pinNom(+k.pin) + (k.type === "sortie" && k.commande === "auto" ? " · automatique" : "") + (k.type === "servo" && k.commande === "suit" ? " · suit une entrée" : "");
     let body = "";
     if (open) {
       if (k.type === "dht11") body = champComp(k, "pin", "Broche DATA (S)", "<select data-c='pin'>" + optsPins(PINS_ES, k.pin) + "</select>");
@@ -1098,8 +1195,29 @@ function dessinerComps() {
         if (k.type === "digital") body += champComp(k, "pin", "Broche", "<select data-c='pin'>" + optsPins(PINS_ENTREE, k.pin) + "</select>")
           + "<label class='f full'><span>Câblage</span><select data-c='cablage'><option value='gnd'" + (k.cablage === "gnd" ? " selected" : "") + ">Bouton entre la broche et GND (résistance interne)</option><option value='vcc'" + (k.cablage !== "gnd" ? " selected" : "") + ">Module qui envoie 3,3 V quand il est actif</option></select></label>"
           + champComp(k, "on", "Texte si actif", inputC(k, "on", "text")) + champComp(k, "off", "Texte si inactif", inputC(k, "off", "text"));
-        if (k.type === "sortie") body += champComp(k, "pin", "Broche", "<select data-c='pin'>" + optsPins(PINS_ES, k.pin) + "</select>")
-          + champComp(k, "on", "Texte si allumée", inputC(k, "on", "text")) + champComp(k, "off", "Texte si éteinte", inputC(k, "off", "text"));
+        const opt = (cle, liste) => "<select data-c='" + cle + "'>" + liste.map(([v, t]) => "<option value='" + esc(v) + "'" + (String(k[cle]) === String(v) ? " selected" : "") + ">" + esc(t) + "</option>").join("") + "</select>";
+        if (k.type === "sortie") {
+          body += champComp(k, "pin", "Broche", "<select data-c='pin'>" + optsPins(PINS_ES, k.pin) + "</select>")
+            + champComp(k, "on", "Texte si allumée", inputC(k, "on", "text")) + champComp(k, "off", "Texte si éteinte", inputC(k, "off", "text"))
+            + "<label class='f full'><span>Commande</span>" + opt("commande", [["page", "Depuis le tableau de bord (boutons, voyant cliquable)"], ["auto", "Automatique, selon une mesure"]]) + "</label>";
+          if (k.commande === "auto") {
+            const mesures = SS.filter(S => !S.sortie && !S.bool);
+            body += "<label class='f full'><span>Mesure qui commande la sortie</span>" + opt("autoSrc", [["", "— choisir —"]].concat(mesures.map(S => [S.key, S.nom + (S.unite ? " (" + S.unite + ")" : "")]))) + "</label>"
+              + champComp(k, "autoCond", "Allumée si la mesure est", opt("autoCond", Object.entries(COND_AUTO)))
+              + champComp(k, "s1", k.autoCond === "entre" ? "Seuil bas" : "Seuil", inputC(k, "s1", "number"))
+              + (k.autoCond === "entre" ? champComp(k, "s2", "Seuil haut", inputC(k, "s2", "number")) : "");
+          }
+        }
+        if (k.type === "ultrason") body += champComp(k, "trig", "Broche TRIG", "<select data-c='trig'>" + optsPins(PINS_ES, k.trig) + "</select>")
+          + champComp(k, "echo", "Broche ECHO", "<select data-c='echo'>" + optsPins(PINS_ENTREE, k.echo) + "</select>")
+          + champComp(k, "unite", "Unité", opt("unite", [["mm", "millimètres (mm)"], ["cm", "centimètres (cm)"]])) + champComp(k, "dec", "Décimales", opt("dec", DEC))
+          + champComp(k, "min", "Distance mini affichée", inputC(k, "min", "number")) + champComp(k, "max", "Distance maxi affichée", inputC(k, "max", "number"))
+          + "<p class='hint full'>Le HC-SR04 s'alimente en 5 V (broche VIN) : son signal ECHO passe par un pont diviseur 1 kΩ / 2 kΩ pour arriver en 3,3 V sur la carte.</p>";
+        if (k.type === "servo") {
+          body += champComp(k, "pin", "Broche du signal (fil orange)", "<select data-c='pin'>" + optsPins(PINS_ES, k.pin) + "</select>")
+            + "<label class='f full'><span>Commande</span>" + opt("commande", [["page", "Depuis le tableau de bord (boutons d'angle)"], ["suit", "Suit une entrée analogique (potentiomètre…)"]]) + "</label>";
+          if (k.commande === "suit") body += "<label class='f full'><span>Entrée suivie</span>" + opt("suit", [["", "— choisir —"]].concat(SS.filter(S => S.analog).map(S => [S.key, S.nom]))) + "</label>";
+        }
         body += "<div class='colorrow'><input type='color' data-c='couleur' value='" + okColor(k.couleur) + "'><span class='hint'>Couleur dans les graphiques</span></div>";
       }
       body = "<div class='wbody'><div class='grid2'>" + body + "</div><p class='hint'>Dans le programme : " + mes.map(S => "<code>" + S.var + "</code>").join(", ") + "</p></div>";
@@ -1130,6 +1248,7 @@ const ICONES = {
   histogramme: "<rect x='4' y='16' width='5' height='11' fill='currentColor'/><rect x='11' y='10' width='5' height='17' fill='currentColor'/><rect x='18' y='13' width='5' height='14' fill='currentColor'/><rect x='25' y='5' width='5' height='22' fill='currentColor'/><rect x='32' y='9' width='5' height='18' fill='currentColor'/>",
   statistiques: "<text x='20' y='12' text-anchor='middle' font-size='8' fill='currentColor' font-family='sans-serif'>min moy max</text><text x='20' y='25' text-anchor='middle' font-size='10' font-weight='bold' fill='currentColor' font-family='sans-serif'>18 21 24</text>",
   tableau: "<rect x='4' y='4' width='32' height='22' fill='none' stroke='currentColor' stroke-width='2'/><path d='M4 11h32M4 18h32M16 4v22' stroke='currentColor' stroke-width='1.5'/>",
+  angle: "<path d='M6 24a14 14 0 0 1 28 0' fill='none' stroke='currentColor' stroke-width='2'/><path d='M20 24 L30 12' stroke='currentColor' stroke-width='3'/><rect x='4' y='26' width='9' height='4' rx='1' fill='currentColor'/><rect x='27' y='26' width='9' height='4' rx='1' fill='currentColor'/>",
   boutons: "<rect x='2' y='9' width='17' height='12' rx='3' fill='#16a34a'/><rect x='21' y='9' width='17' height='12' rx='3' fill='#6b7280'/>",
   bascule: "<rect x='7' y='8' width='26' height='14' rx='4' fill='currentColor'/>",
   interrupteur: "<rect x='6' y='7' width='28' height='16' rx='8' fill='currentColor'/><circle cx='26' cy='15' r='6' fill='#fff'/>",
@@ -1146,7 +1265,7 @@ function champBloc(b, S, [k, label, type, o]) {
   o = o || {};
   if (o.si) {
     if (o.si === "!bool") { if (S && S.bool) return ""; }
-    else if (o.si === "sortie") { if (!S || !S.sortie) return ""; }
+    else if (o.si === "sortie") { if (!S || !S.sortie || S.auto) return ""; }
     else { const m = o.si.match(/^(\w+)=(\w+)$/); if (m ? b[m[1]] !== m[2] : !b[o.si]) return ""; }
   }
   const id = "f_" + b.id + "_" + k, v = b[k], cls = o.full ? " full" : "";
@@ -1164,7 +1283,7 @@ function champBloc(b, S, [k, label, type, o]) {
 }
 function resumeBloc(b) {
   const F = FORMES[b.forme];
-  if (F.src === "une" || F.src === "sortie") { const S = srcByKey(b.src); return S ? S.nom + (b.titre && b.titre !== S.nom ? " · « " + b.titre + " »" : "") : "aucune valeur choisie"; }
+  if (UNIQUE.includes(F.src)) { const S = srcByKey(b.src); return S ? S.nom + (b.titre && b.titre !== S.nom ? " · « " + b.titre + " »" : "") : "aucune valeur choisie"; }
   if (F.src === "plusieurs") return (b.srcs || []).map(k => (srcByKey(k) || {}).nom).filter(Boolean).join(", ") || "aucune valeur cochée";
   return b.texte || b.titre || F.desc;
 }
@@ -1177,9 +1296,9 @@ function dessinerBlocs() {
     let body = "";
     if (open) {
       body = "<div class='wbody'><button class='formebtn' data-act='forme'><span class='ico'>" + icone(b.forme) + "</span><span><b>" + F.nom + "</b><br><small class='hint'>" + F.desc + "</small></span><em>Changer de forme…</em></button><div class='grid2'>";
-      if (F.src === "une" || F.src === "sortie") {
-        const ok = SS.filter(x => F.src === "une" || x.sortie);
-        body += "<label class='f full'><span>" + (F.src === "sortie" ? "Sortie commandée" : "Valeur affichée") + "</span><select data-k='src'>" + (S ? "" : "<option value=''>— choisir —</option>") + ok.map(x => "<option value='" + x.key + "'" + (x.key === b.src ? " selected" : "") + ">" + esc(x.nom) + (x.unite ? " (" + esc(x.unite) + ")" : "") + "</option>").join("") + "</select></label>";
+      if (UNIQUE.includes(F.src)) {
+        const ok = SS.filter(x => srcCompatible(F, x));
+        body += "<label class='f full'><span>" + (F.src === "sortie" ? "Sortie commandée" : F.src === "servo" ? "Servomoteur commandé" : "Valeur affichée") + "</span><select data-k='src'>" + (S ? "" : "<option value=''>— choisir —</option>") + ok.map(x => "<option value='" + x.key + "'" + (x.key === b.src ? " selected" : "") + ">" + esc(x.nom) + (x.unite ? " (" + esc(x.unite) + ")" : "") + "</option>").join("") + "</select></label>";
       }
       if (!F.sansCarte) body += champBloc(b, S, ["titre", "Titre du bloc", "text"]);
       if (!F.sansCarte && F.champs.indexOf(LARG) < 0) body += champBloc(b, S, LARG);
@@ -1199,11 +1318,11 @@ function dessinerBlocs() {
 let galMode = null;   // { remplace: idBloc } ou null pour ajouter
 function demoConfig(forme, base) {
   // une petite carte de démonstration pour dessiner la vignette
-  const c = { nom: "demo", periode: "5", page: Object.assign({}, cfg.page), comps: [{ id: "d1", type: "dht11", pin: 4 }, { id: "d2", type: "sortie", ...COMP.sortie.defaut }], blocs: [] };
+  const c = { nom: "demo", periode: "5", page: Object.assign({}, cfg.page), comps: [{ id: "d1", type: "dht11", pin: 4 }, { id: "d2", type: "sortie", ...COMP.sortie.defaut }, { id: "d3", type: "servo", ...COMP.servo.defaut }], blocs: [] };
   let key = "d1:t";
-  if (base) { const S = srcByKey(base.src || (base.srcs || [])[0]); if (S && !S.sortie) { c.comps = [JSON.parse(JSON.stringify(S.comp)), c.comps[1]]; key = S.key; if (S.comp.type === "dht11") c.comps[0].id = S.comp.id; } }
+  if (base) { const S = srcByKey(base.src || (base.srcs || [])[0]); if (S && !S.sortie && !S.servo) { c.comps = [JSON.parse(JSON.stringify(S.comp)), c.comps[1], c.comps[2]]; key = S.key; if (S.comp.type === "dht11") c.comps[0].id = S.comp.id; } }
   const F = FORMES[forme];
-  const b = nouveauBloc(c, forme, F.src === "sortie" ? "d2:v" : F.src === "plusieurs" ? undefined : key, { largeur: "1" });
+  const b = nouveauBloc(c, forme, F.src === "sortie" ? "d2:v" : F.src === "servo" ? "d3:v" : F.src === "plusieurs" ? undefined : key, { largeur: "1" });
   if (base && base.titre && F.src === "une") b.titre = base.titre;
   if (forme === "courbe") b.srcs = sources(c).filter(S => !S.sortie).slice(0, 2).map(S => S.key);
   c.blocs = [b];
@@ -1231,7 +1350,8 @@ function ouvrirGalerie(remplace) {
   $("galTitre").textContent = b ? "Changer la forme du bloc" : "Ajouter un bloc";
   $("galSub").textContent = b ? "La valeur affichée est gardée ; seule la façon de la montrer change." : "Cliquez sur une forme : le bloc est ajouté à la fin, réglez-le ensuite.";
   const dispo = f => { const F = FORMES[f];
-    if (F.src === "sortie" && !SS.some(S => S.sortie)) return "ajoutez une sortie dans « Ma carte »";
+    if (F.src === "sortie" && !SS.some(S => S.sortie && !S.auto)) return "ajoutez une sortie commandée depuis le tableau de bord dans « Ma carte »";
+    if (F.src === "servo" && !SS.some(S => S.servo && S.comp.commande !== "suit")) return "ajoutez un servomoteur commandé depuis le tableau de bord dans « Ma carte »";
     if ((F.src === "une" || F.src === "plusieurs") && !SS.length) return "ajoutez un composant dans « Ma carte »";
     if (F.besoinDht && !cfg.comps.some(k => k.type === "dht11")) return "ajoutez le capteur DHT11";
     if (b && FORMES[b.forme].src !== "aucune" && F.src === "aucune") return null;
@@ -1269,6 +1389,7 @@ $("gal").addEventListener("click", e => { if (e.target === $("gal")) $("gal").cl
 let tMaj = null;
 function maj(immediat) { clearTimeout(tMaj); const go = () => { syncSim(); majApercu(); majCode(); dessinerSim(); sauver(); }; if (immediat) go(); else tMaj = setTimeout(go, 150); }
 function majApercu() {
+  autoSim();
   sim.age = sim.uptime - sim.lastMeasure + ($("sLive").checked ? 0 : 3); sim.renduA = sim.uptime;
   const f = $("apercu"), y = f.contentWindow ? f.contentWindow.scrollY : 0;
   let html;
@@ -1278,7 +1399,8 @@ function majApercu() {
     f.contentDocument.addEventListener("click", e => {
       const a = e.target.closest && e.target.closest("a"); if (!a) return;
       e.preventDefault();
-      const href = a.getAttribute("href"), m = href.match(/^\/(\w+)\/(on|off)$/);
+      const href = a.getAttribute("href"), m = href.match(/^\/(\w+)\/(on|off)$/), ma = href.match(/^\/(\w+)\/angle\?v=(-?\d+)$/);
+      if (ma) { const S = sources().find(x => x.servo && x.route === ma[1]); if (S) { sim.v[S.var] = clamp(+ma[2], 0, 180); toast("Le navigateur demande " + href + " : la carte tourne « " + S.comp.nom + " » à " + sim.v[S.var] + "°"); majApercu(); dessinerSim(); } return; }
       if (m) { const S = sources().find(x => x.sortie && x.route === m[1]); if (S) { sim.v[S.var] = m[2] === "on" ? 1 : 0; toast("Le navigateur demande " + href + " : la carte " + (m[2] === "on" ? "allume" : "éteint") + " « " + S.nom + " » et renvoie le tableau de bord"); majApercu(); dessinerSim(); } }
       else if (href === "/mesures.csv") csvSim();
     });
@@ -1313,9 +1435,10 @@ function dessinerSim() {
   if (SS.some(S => S.dht)) rows.push("<div class='simrow'><label>Température <input type='range' data-air='t' min='0' max='50' step='0.1' value='" + sim.air.t + "'><output>" + fx(sim.air.t, 1) + " °C</output></label>"
     + "<label>Humidité <input type='range' data-air='h' min='0' max='100' step='1' value='" + sim.air.h + "'><output>" + fx(sim.air.h, 0) + " %</output></label>"
     + "<label><input type='checkbox' id='sErr'" + (sim.err ? " checked" : "") + "> DHT11 débranché</label></div>");
-  SS.filter(S => S.analog).forEach(S => rows.push("<div class='simrow'><label>" + esc(S.nom) + " <input type='range' data-var='" + S.var + "' min='" + Math.min(S.min, S.max) + "' max='" + Math.max(S.min, S.max) + "' step='" + Math.abs(S.max - S.min) / 200 + "' value='" + sim.v[S.var] + "'><output>" + fx(sim.v[S.var], S.dec) + " " + esc(S.unite) + "</output></label></div>"));
+  SS.filter(S => S.analog || S.ultrason).forEach(S => rows.push("<div class='simrow'><label>" + esc(S.nom) + " <input type='range' data-var='" + S.var + "' min='" + Math.min(S.min, S.max) + "' max='" + Math.max(S.min, S.max) + "' step='" + Math.abs(S.max - S.min) / 200 + "' value='" + sim.v[S.var] + "'><output>" + fx(sim.v[S.var], S.dec) + " " + esc(S.unite) + "</output></label></div>"));
   SS.filter(S => S.bool && !S.sortie).forEach(S => rows.push("<div class='simrow'><label><input type='checkbox' data-var='" + S.var + "'" + (sim.v[S.var] > 0.5 ? " checked" : "") + "> " + esc(S.nom) + " : " + esc(sim.v[S.var] > 0.5 ? S.on : S.off) + "</label></div>"));
-  SS.filter(S => S.sortie).forEach(S => rows.push("<div class='simrow'><span class='hint'>" + esc(S.nom) + " :</span><svg width='20' height='20' viewBox='0 0 20 20' aria-hidden='true'><circle cx='10' cy='10' r='7' stroke='#333' stroke-width='2' fill='" + (sim.v[S.var] > 0.5 ? S.couleur : "#555") + "'/></svg><span class='hint'>" + esc(sim.v[S.var] > 0.5 ? S.on : S.off) + " · commandée par les boutons du tableau de bord</span></div>"));
+  SS.filter(S => S.servo).forEach(S => rows.push("<div class='simrow'><span class='hint'>" + esc(S.comp.nom) + " : <b>" + Math.round(sim.v[S.var] || 0) + "°</b> · " + (S.comp.commande === "suit" ? "suit l'entrée choisie" : "commandé par les boutons d'angle du tableau de bord") + "</span></div>"));
+  SS.filter(S => S.sortie).forEach(S => rows.push("<div class='simrow'><span class='hint'>" + esc(S.nom) + " :</span><svg width='20' height='20' viewBox='0 0 20 20' aria-hidden='true'><circle cx='10' cy='10' r='7' stroke='#333' stroke-width='2' fill='" + (sim.v[S.var] > 0.5 ? S.couleur : "#555") + "'/></svg><span class='hint'>" + esc(sim.v[S.var] > 0.5 ? S.on : S.off) + (S.auto ? " · automatique, selon la mesure" : " · commandée par les boutons du tableau de bord") + "</span></div>"));
   if (!SS.length) rows.push("<p class='hint'>Ajoutez des composants dans « Ma carte » pour les simuler.</p>");
   if (document.activeElement && box.contains(document.activeElement) && document.activeElement.type === "range") {
     // ne pas reconstruire pendant qu'on fait glisser un curseur : mettre à jour les textes seulement
