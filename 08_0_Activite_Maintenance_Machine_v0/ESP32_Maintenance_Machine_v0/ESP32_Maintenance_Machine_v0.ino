@@ -18,7 +18,7 @@ const char* password = "MOT_DE_PASSE";   // mot de passe du réseau Wi-Fi
 
 // ---------- Broches
 const int PIN_TRIG   = 33;   // HC-SR04 TRIG
-const int PIN_ECHO   = 25;   // HC-SR04 ECHO (via pont diviseur 1 kΩ / 2 kΩ)
+const int PIN_ECHO   = 25;   // HC-SR04 ECHO (reliée directement)
 const int PIN_DHT    = 4;    // DHT11 DATA
 const int LED_VERTE  = 21;
 const int LED_ORANGE = 19;

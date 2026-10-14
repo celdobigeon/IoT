@@ -964,7 +964,7 @@ function programme() {
   SS.filter(S => S.analog).forEach(S => o.push("//   - " + S.nom + " (entrée analogique) : signal sur " + pinNom(S.comp.pin) + ", alimentation 3V3 et GND"));
   SS.filter(S => S.bool && !S.sortie).forEach(S => o.push("//   - " + S.nom + " (entrée tout-ou-rien) sur " + pinNom(S.comp.pin) + (S.comp.cablage === "gnd" ? ", l'autre patte sur GND" : ", signal à 3,3 V quand il est actif")));
   sorties.forEach(S => o.push("//   - " + S.nom + " (sortie) sur " + pinNom(S.comp.pin) + (/led/i.test(S.nom) ? " avec une résistance de 220 ohms vers GND" : "")));
-  SS.filter(S => S.ultrason).forEach(S => o.push("//   - " + S.nom + " (capteur ultrason HC-SR04) : VCC sur VIN (5 V), TRIG sur " + pinNom(+S.comp.trig) + ", ECHO sur " + pinNom(+S.comp.echo) + " par un pont diviseur 1 kohm / 2 kohms, GND sur GND"));
+  SS.filter(S => S.ultrason).forEach(S => o.push("//   - " + S.nom + " (capteur ultrason HC-SR04) : VCC sur VIN (5 V), TRIG sur " + pinNom(+S.comp.trig) + ", ECHO sur " + pinNom(+S.comp.echo) + " (reliée directement), GND sur GND"));
   servos.forEach(S => o.push("//   - " + S.comp.nom + " (servomoteur SG90) : fil orange (signal) sur " + pinNom(+S.comp.pin) + ", fil rouge sur 3V3 (ou VIN), fil marron sur GND"));
   if (!SS.length) o.push("//   - rien (page fixe)");
   if (dht) o.push("// Bibliothèque à installer : « DHT sensor library » (Adafruit)");
@@ -983,7 +983,7 @@ function programme() {
     pad("bool " + S.var + " = false;", 41) + "// vrai si « " + S.on + " »"));
   sorties.forEach(S => o.push("", "// --- " + S.nom + " : sortie" + (S.auto ? " automatique" : "") + " ---", pad("const int " + PIN(S) + " = " + S.comp.pin + ";", 41) + "// broche", pad("bool " + S.var + " = false;", 41) + "// vrai si « " + S.on + " »"));
   SS.filter(S => S.ultrason).forEach(S => o.push("", "// --- " + S.nom + " : capteur ultrason HC-SR04 ---", pad("const int " + PIN(S) + "_TRIG = " + S.comp.trig + ";", 41) + "// broche TRIG (déclenchement)",
-    pad("const int " + PIN(S) + "_ECHO = " + S.comp.echo + ";", 41) + "// broche ECHO (écho, par le pont diviseur)", pad("float " + S.var + " = 0;", 41) + "// distance mesurée (" + S.unite + ")"));
+    pad("const int " + PIN(S) + "_ECHO = " + S.comp.echo + ";", 41) + "// broche ECHO (écho)", pad("float " + S.var + " = 0;", 41) + "// distance mesurée (" + S.unite + ")"));
   servos.forEach(S => o.push("", "// --- " + S.comp.nom + " : servomoteur SG90 ---", pad("const int " + PIN(S) + " = " + S.comp.pin + ";", 41) + "// broche du signal",
     pad("Servo srv_" + S.var + ";", 41) + "// le servomoteur", pad("int " + S.var + " = 90;", 41) + "// angle actuel (°)"));
 
@@ -1212,7 +1212,7 @@ function dessinerComps() {
           + champComp(k, "echo", "Broche ECHO", "<select data-c='echo'>" + optsPins(PINS_ENTREE, k.echo) + "</select>")
           + champComp(k, "unite", "Unité", opt("unite", [["mm", "millimètres (mm)"], ["cm", "centimètres (cm)"]])) + champComp(k, "dec", "Décimales", opt("dec", DEC))
           + champComp(k, "min", "Distance mini affichée", inputC(k, "min", "number")) + champComp(k, "max", "Distance maxi affichée", inputC(k, "max", "number"))
-          + "<p class='hint full'>Le HC-SR04 s'alimente en 5 V (broche VIN) : son signal ECHO passe par un pont diviseur 1 kΩ / 2 kΩ pour arriver en 3,3 V sur la carte.</p>";
+          + "<p class='hint full'>Le HC-SR04 s'alimente en 5 V (broche VIN). Sa broche ECHO se relie directement à la carte, sans résistance.</p>";
         if (k.type === "servo") {
           body += champComp(k, "pin", "Broche du signal (fil orange)", "<select data-c='pin'>" + optsPins(PINS_ES, k.pin) + "</select>")
             + "<label class='f full'><span>Commande</span>" + opt("commande", [["page", "Depuis le tableau de bord (boutons d'angle)"], ["suit", "Suit une entrée analogique (potentiomètre…)"]]) + "</label>";
